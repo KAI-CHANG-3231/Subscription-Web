@@ -16,7 +16,7 @@ const categorySelect = document.querySelector("#category");
 const feeInput = document.querySelector("#fee");
 const currencySelect = document.querySelector("#currency");
 const paymentMethodInput = document.querySelector("#payment-method");
-const isSharedInput = document.querySelector("#is-shared");
+const subscriptionScopeSelect = document.querySelector("#subscription-scope");
 const sharedFields = document.querySelector("#shared-fields");
 const sharedWithInput = document.querySelector("#shared-with");
 const splitCountInput = document.querySelector("#split-count");
@@ -92,11 +92,12 @@ function getSharedNames() {
 }
 
 function syncSharedFields(options = {}) {
-  sharedFields.hidden = !isSharedInput.checked;
-  splitCountInput.required = isSharedInput.checked;
+  const isShared = subscriptionScopeSelect.value === "shared";
+  sharedFields.hidden = !isShared;
+  splitCountInput.required = isShared;
   personalFeeInput.required = false;
 
-  if (!isSharedInput.checked) return;
+  if (!isShared) return;
 
   const memberCount = getSharedNames().length + 1;
   const currentSplitCount = Number(splitCountInput.value);
@@ -142,7 +143,7 @@ function fillForm(item) {
   feeInput.value = String(item.fee || "");
   currencySelect.value = item.currency || "TWD";
   paymentMethodInput.value = item.paymentMethod || "credit_card";
-  isSharedInput.checked = Boolean(item.isShared);
+  subscriptionScopeSelect.value = item.isShared ? "shared" : "personal";
   sharedWithInput.value = Array.isArray(item.sharedWith) ? item.sharedWith.join("、") : "";
   splitCountInput.value = String(item.splitCount || Math.max(2, (item.sharedWith?.length || 0) + 1));
   personalFeeInput.value = item.personalFee ? String(item.personalFee) : "";
@@ -177,7 +178,7 @@ function validateForm() {
   if (cycleSelect.value === "custom" && (!Number.isInteger(cycleDays) || cycleDays <= 0)) {
     return "自訂週期天數必須是大於 0 的整數。";
   }
-  if (isSharedInput.checked) {
+  if (subscriptionScopeSelect.value === "shared") {
     if (!Number.isInteger(splitCount) || splitCount < 2) return "共同訂閱的分攤人數至少要 2 人。";
     if (personalFeeInput.value && (!Number.isFinite(personalFee) || personalFee <= 0)) {
       return "我個人負擔金額必須大於 0。";
@@ -203,10 +204,10 @@ function buildSubscription() {
     fee: Number(feeInput.value),
     currency: currencySelect.value,
     paymentMethod: paymentMethodInput.value,
-    isShared: isSharedInput.checked,
-    sharedWith: isSharedInput.checked ? getSharedNames() : [],
-    splitCount: isSharedInput.checked ? Number(splitCountInput.value) : 1,
-    personalFee: isSharedInput.checked && personalFeeInput.value ? Number(personalFeeInput.value) : null,
+    isShared: subscriptionScopeSelect.value === "shared",
+    sharedWith: subscriptionScopeSelect.value === "shared" ? getSharedNames() : [],
+    splitCount: subscriptionScopeSelect.value === "shared" ? Number(splitCountInput.value) : 1,
+    personalFee: subscriptionScopeSelect.value === "shared" && personalFeeInput.value ? Number(personalFeeInput.value) : null,
     cycle: cycleSelect.value,
     cycleDays: cycleSelect.value === "custom" ? Number(cycleDaysInput.value) : null,
     nextBillingDate: nextBillingDateInput.value,
@@ -281,7 +282,7 @@ presetSelect.addEventListener("change", () => {
 });
 cycleSelect.addEventListener("change", () => toggleCycleFields({ syncDate: true }));
 startDateInput.addEventListener("change", syncMonthlyNextBillingDate);
-isSharedInput.addEventListener("change", () => syncSharedFields({ forcePersonalFee: true }));
+subscriptionScopeSelect.addEventListener("change", () => syncSharedFields({ forcePersonalFee: true }));
 sharedWithInput.addEventListener("input", () => syncSharedFields());
 splitCountInput.addEventListener("input", () => syncSharedFields({ forcePersonalFee: true }));
 feeInput.addEventListener("input", () => syncSharedFields({ forcePersonalFee: true }));

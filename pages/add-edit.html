@@ -73,10 +73,13 @@
         </label>
 
         <fieldset>
-          <legend>共同訂閱</legend>
-          <label class="active-row">
-            <span>啟用共同訂閱</span>
-            <input id="is-shared" name="isShared" type="checkbox">
+          <legend>訂閱類型</legend>
+          <label>
+            <span>訂閱類型</span>
+            <select id="subscription-scope" name="subscriptionScope">
+              <option value="personal">個人訂閱</option>
+              <option value="shared">共同訂閱</option>
+            </select>
           </label>
           <div id="shared-fields" class="shared-fields" hidden>
             <label>

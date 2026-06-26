@@ -262,6 +262,10 @@ legend {
   margin-top: 12px;
 }
 
+.shared-fields[hidden] {
+  display: none;
+}
+
 .checkbox-grid label {
   display: flex;
   align-items: center;

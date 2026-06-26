@@ -9,7 +9,8 @@ export const DEFAULT_SETTINGS = {
   },
   enableNotifications: true,
   enableNewTab: false,
-  showExpiredInDashboard: true
+  showExpiredInDashboard: true,
+  summaryAmountMode: "personal"
 };
 
 const STORAGE_KEYS = {
@@ -47,10 +48,14 @@ const VALID_PAYMENT_METHODS = new Set([
 ]);
 
 function mergeSettings(settings = {}) {
+  const summaryAmountMode = ["personal", "gross"].includes(settings.summaryAmountMode)
+    ? settings.summaryAmountMode
+    : DEFAULT_SETTINGS.summaryAmountMode;
   return {
     ...DEFAULT_SETTINGS,
     ...settings,
     enableNewTab: false,
+    summaryAmountMode,
     exchangeRates: {
       ...DEFAULT_SETTINGS.exchangeRates,
       ...(settings.exchangeRates || {})

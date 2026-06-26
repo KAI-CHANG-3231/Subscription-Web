@@ -72,6 +72,10 @@ function getSharedLabel(item) {
   return `${item.splitCount || 2} 人共同訂閱`;
 }
 
+function getSummaryFee(item, settings) {
+  return settings.summaryAmountMode === "gross" ? item.fee : getPersonalFee(item);
+}
+
 function createMenuButton() {
   const button = document.createElement("button");
   button.type = "button";
@@ -254,7 +258,7 @@ async function render() {
     .sort((a, b) => a.nextBillingDate.localeCompare(b.nextBillingDate));
 
   const monthlyTotal = activeSubscriptions.reduce((sum, item) => {
-    const monthly = calcMonthlyEquivalent(getPersonalFee(item), item.cycle, item.cycleDays);
+    const monthly = calcMonthlyEquivalent(getSummaryFee(item, settings), item.cycle, item.cycleDays);
     return sum + convertToDefault(monthly, item.currency, settings);
   }, 0);
 
@@ -263,7 +267,9 @@ async function render() {
     .sort((a, b) => a.nextBillingDate.localeCompare(b.nextBillingDate));
 
   monthlyTotalEl.textContent = formatCurrency(monthlyTotal, settings.defaultCurrency);
-  monthlyChangeEl.textContent = "只計算訂閱中且非單次項目";
+  monthlyChangeEl.textContent = settings.summaryAmountMode === "gross"
+    ? "顯示未分攤總金額"
+    : "顯示分攤後個人金額";
   countEl.textContent = `${visibleSubscriptions.length} 項`;
   setActiveTab();
   listEl.replaceChildren();

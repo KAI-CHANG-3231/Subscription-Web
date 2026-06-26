@@ -91,7 +91,8 @@ SubTrack 目前不覆蓋 Chrome 原生新分頁，這是為了保留你平常使
   },
   "enableNotifications": true,
   "enableNewTab": false,
-  "showExpiredInDashboard": true
+  "showExpiredInDashboard": true,
+  "summaryAmountMode": "personal"
 }
 ```
 
@@ -102,7 +103,8 @@ SubTrack 目前不覆蓋 Chrome 原生新分頁，這是為了保留你平常使
 - `expired`：到期或停止，不計費、不提醒
 - `once` 單次訂閱到期後，service worker 會自動改為 `expired`
 - 恢復或重新啟用時，需要指定新的下次扣款日期
-- 總月費與卡片金額會優先使用 `personalFee`，若共同訂閱未填個人金額，則以 `fee / splitCount` 估算
+- 設定頁可選擇總金額顯示方式：`personal` 顯示分攤後個人金額，`gross` 顯示未分攤總金額
+- 卡片金額會優先使用 `personalFee`，若共同訂閱未填個人金額，則以 `fee / splitCount` 估算
 
 ## 開發備註
 

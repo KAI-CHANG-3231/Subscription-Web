@@ -10,6 +10,7 @@ import { scheduleAllAlarms } from "../utils/notification.js";
 
 const settingsForm = document.querySelector("#settings-form");
 const defaultCurrencyInput = document.querySelector("#default-currency");
+const summaryAmountModeInputs = Array.from(document.querySelectorAll('input[name="summaryAmountMode"]'));
 const rateUsdInput = document.querySelector("#rate-usd");
 const rateJpyInput = document.querySelector("#rate-jpy");
 const rateEurInput = document.querySelector("#rate-eur");
@@ -43,6 +44,7 @@ function validateSettings(settings) {
 }
 
 function readSettingsFromForm() {
+  const summaryAmountMode = summaryAmountModeInputs.find((input) => input.checked)?.value || "personal";
   return {
     defaultCurrency: defaultCurrencyInput.value,
     exchangeRates: {
@@ -52,12 +54,16 @@ function readSettingsFromForm() {
     },
     enableNotifications: enableNotificationsInput.checked,
     enableNewTab: false,
-    showExpiredInDashboard: showExpiredInput.checked
+    showExpiredInDashboard: showExpiredInput.checked,
+    summaryAmountMode
   };
 }
 
 function fillSettings(settings) {
   defaultCurrencyInput.value = settings.defaultCurrency;
+  summaryAmountModeInputs.forEach((input) => {
+    input.checked = input.value === (settings.summaryAmountMode || "personal");
+  });
   rateUsdInput.value = String(settings.exchangeRates.USD);
   rateJpyInput.value = String(settings.exchangeRates.JPY);
   rateEurInput.value = String(settings.exchangeRates.EUR);
