@@ -5,7 +5,14 @@ import {
   reactivateSubscription,
   updateStatus
 } from "../utils/storage.js";
-import { calcMonthlyEquivalent, convertToDefault, formatCurrency, getPersonalFee } from "../utils/currency.js";
+import {
+  calcMonthlyEquivalent,
+  convertToDefault,
+  formatCurrency,
+  formatCurrencyFormula,
+  getPersonalFee,
+  summarizeMonthlyByCurrency
+} from "../utils/currency.js";
 import { formatDate, getDaysUntil, todayString } from "../utils/date.js";
 import { scheduleAllAlarms } from "../utils/notification.js";
 
@@ -257,19 +264,14 @@ async function render() {
     .filter((item) => item.status === "active" && item.cycle !== "once")
     .sort((a, b) => a.nextBillingDate.localeCompare(b.nextBillingDate));
 
-  const monthlyTotal = activeSubscriptions.reduce((sum, item) => {
-    const monthly = calcMonthlyEquivalent(getSummaryFee(item, settings), item.cycle, item.cycleDays);
-    return sum + convertToDefault(monthly, item.currency, settings);
-  }, 0);
+  const monthlySummary = summarizeMonthlyByCurrency(activeSubscriptions, settings, getSummaryFee);
 
   const visibleSubscriptions = subscriptions
     .filter((item) => item.status === activeStatus)
     .sort((a, b) => a.nextBillingDate.localeCompare(b.nextBillingDate));
 
-  monthlyTotalEl.textContent = formatCurrency(monthlyTotal, settings.defaultCurrency);
-  monthlyChangeEl.textContent = settings.summaryAmountMode === "gross"
-    ? "顯示未分攤總金額"
-    : "顯示分攤後個人金額";
+  monthlyTotalEl.textContent = formatCurrency(monthlySummary.total, monthlySummary.displayCurrency);
+  monthlyChangeEl.textContent = formatCurrencyFormula(monthlySummary);
   countEl.textContent = `${visibleSubscriptions.length} 項`;
   setActiveTab();
   listEl.replaceChildren();

@@ -29,7 +29,7 @@
         <section class="section">
           <h2>顯示與匯率</h2>
           <label>
-            <span>預設顯示幣別</span>
+            <span>主畫面總支出顯示幣別</span>
             <select id="default-currency">
               <option value="TWD">TWD</option>
               <option value="USD">USD</option>
@@ -37,6 +37,7 @@
               <option value="EUR">EUR</option>
             </select>
           </label>
+          <p class="hint">Popup 與 Dashboard 會先依原始幣別加總，再使用下方保存的匯率換算成這個主要幣別；沒有訂閱項目的幣種不會出現在公式中。</p>
 
           <fieldset>
             <legend>總金額顯示</legend>

@@ -197,8 +197,14 @@ h1 {
 }
 
 #monthly-change {
-  color: var(--accent-mint);
-  font-weight: 700;
+  overflow: visible;
+  color: var(--text-secondary);
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 600;
+  line-height: 1.45;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .icon-button {

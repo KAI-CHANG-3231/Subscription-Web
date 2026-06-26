@@ -40,6 +40,9 @@ const VALID_PAYMENT_METHODS = new Set([
 ]);
 
 function mergeSettings(settings = {}) {
+  const defaultCurrency = ["TWD", "USD", "JPY", "EUR"].includes(settings.defaultCurrency)
+    ? settings.defaultCurrency
+    : DEFAULT_SETTINGS.defaultCurrency;
   const summaryAmountMode = ["personal", "gross"].includes(settings.summaryAmountMode)
     ? settings.summaryAmountMode
     : DEFAULT_SETTINGS.summaryAmountMode;
@@ -47,6 +50,7 @@ function mergeSettings(settings = {}) {
   return {
     ...DEFAULT_SETTINGS,
     ...settings,
+    defaultCurrency,
     enableNewTab: false,
     summaryAmountMode,
     categories,

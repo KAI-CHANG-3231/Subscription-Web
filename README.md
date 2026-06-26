@@ -12,7 +12,7 @@ SubTrack 是一個 Manifest V3 Chrome Extension，用來手動記錄個人數位
 - 自訂分類：可新增或刪除分類，Dashboard 分類 tab 會跟著更新
 - 共同訂閱：可記錄共同成員、分攤人數與個人負擔金額
 - 付款方式：信用卡、金融卡、銀行轉帳、行動支付、現金或其他
-- 支援 TWD、USD、JPY、EUR 與手動匯率
+- 支援 TWD、USD、JPY、EUR 與手動匯率，可指定主畫面總支出的主要顯示幣別
 - 匯入、匯出、清除資料
 - Bright fintech 視覺設計：Spend Bar、倒數 chip、滑動式 tab indicator
 
@@ -106,6 +106,8 @@ SubTrack 目前不覆蓋 Chrome 原生新分頁，這是為了保留你平常使
 - `once` 單次訂閱到期後，service worker 會自動改為 `expired`
 - 恢復或重新啟用時，需要指定新的下次扣款日期
 - 設定頁可選擇總金額顯示方式：`personal` 顯示分攤後個人金額，`gross` 顯示未分攤總金額
+- Popup 與 Dashboard 會依原始幣別先加總，再使用設定頁保存的匯率換算成 `defaultCurrency`
+- 總支出下方會顯示公式，例如 `390 TWD + 1200 JPY + 9.99 USD = 977 TWD`；沒有訂閱項目的幣種不會顯示
 - 卡片金額會優先使用 `personalFee`，若共同訂閱未填個人金額，則以 `fee / splitCount` 估算
 - TWD 與 JPY 的分攤金額不允許小數；不能整除時，個人負擔預設為多 1 元的那份
 - 刪除分類時，使用該分類的訂閱會自動移到「其他」

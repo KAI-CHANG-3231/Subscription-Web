@@ -108,9 +108,12 @@ h1 {
 
 .summary-change {
   margin-top: 6px;
-  color: var(--accent-mint);
+  color: var(--text-secondary);
+  font-family: "JetBrains Mono", monospace;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 h2 {

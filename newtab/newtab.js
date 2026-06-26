@@ -5,7 +5,14 @@ import {
   reactivateSubscription,
   updateStatus
 } from "../utils/storage.js";
-import { calcMonthlyEquivalent, convertToDefault, formatCurrency, getPersonalFee } from "../utils/currency.js";
+import {
+  calcMonthlyEquivalent,
+  convertToDefault,
+  formatCurrency,
+  formatCurrencyFormula,
+  getPersonalFee,
+  summarizeMonthlyByCurrency
+} from "../utils/currency.js";
 import { formatDate, getDaysUntil, todayString } from "../utils/date.js";
 import { scheduleAllAlarms } from "../utils/notification.js";
 
@@ -344,10 +351,7 @@ async function render() {
   cachedSubscriptions = await getSubscriptions();
   const activeSubscriptions = cachedSubscriptions.filter((item) => item.status === "active");
   const recurringActive = activeSubscriptions.filter((item) => item.cycle !== "once");
-  const monthlyTotal = recurringActive.reduce((sum, item) => {
-    const monthly = calcMonthlyEquivalent(getSummaryFee(item, cachedSettings), item.cycle, item.cycleDays);
-    return sum + convertToDefault(monthly, item.currency, cachedSettings);
-  }, 0);
+  const monthlySummary = summarizeMonthlyByCurrency(recurringActive, cachedSettings, getSummaryFee);
 
   todayLabelEl.textContent = new Intl.DateTimeFormat("zh-TW", {
     year: "numeric",
@@ -355,10 +359,8 @@ async function render() {
     day: "numeric",
     weekday: "long"
   }).format(new Date());
-  monthlyTotalEl.textContent = formatCurrency(monthlyTotal, cachedSettings.defaultCurrency);
-  monthlyChangeEl.textContent = cachedSettings.summaryAmountMode === "gross"
-    ? "顯示未分攤總金額"
-    : "顯示分攤後個人金額";
+  monthlyTotalEl.textContent = formatCurrency(monthlySummary.total, monthlySummary.displayCurrency);
+  monthlyChangeEl.textContent = formatCurrencyFormula(monthlySummary);
   subscriptionCountEl.textContent = `${activeSubscriptions.length} 項`;
   renderNearest(activeSubscriptions);
 
