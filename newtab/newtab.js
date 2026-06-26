@@ -1,4 +1,5 @@
 import {
+  deleteSubscription,
   getSettings,
   getSubscriptions,
   reactivateSubscription,
@@ -136,7 +137,7 @@ async function pauseSubscription(item) {
   await updateStatus(item.id, "paused", "使用者手動暫停");
   cachedSubscriptions = await getSubscriptions();
   await scheduleAllAlarms(cachedSubscriptions);
-  renderGrid();
+  await render();
 }
 
 async function stopSubscription(item) {
@@ -145,7 +146,16 @@ async function stopSubscription(item) {
   await updateStatus(item.id, "expired", "使用者手動停止");
   cachedSubscriptions = await getSubscriptions();
   await scheduleAllAlarms(cachedSubscriptions);
-  renderGrid();
+  await render();
+}
+
+async function permanentlyDeleteSubscription(item) {
+  const confirmed = confirm(`永久刪除 ${item.name}？此操作無法復原。`);
+  if (!confirmed) return;
+  await deleteSubscription(item.id);
+  cachedSubscriptions = await getSubscriptions();
+  await scheduleAllAlarms(cachedSubscriptions);
+  await render();
 }
 
 async function reactivate(item) {
@@ -156,7 +166,7 @@ async function reactivate(item) {
   await scheduleAllAlarms(cachedSubscriptions);
   activeStatus = "active";
   statusFilterEl.value = activeStatus;
-  renderGrid();
+  await render();
 }
 
 function appendAction(actions, label, className, handler) {
@@ -250,6 +260,7 @@ function createCard(item, index) {
     appendAction(actions, "停止", "text-button danger-text", () => stopSubscription(item));
   } else {
     appendAction(actions, "重新啟用", "text-button", () => reactivate(item));
+    appendAction(actions, "永久刪除", "text-button danger-text", () => permanentlyDeleteSubscription(item));
   }
 
   card.append(spendBar, content, menu, actions);

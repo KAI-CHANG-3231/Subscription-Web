@@ -1,4 +1,5 @@
 import {
+  deleteSubscription,
   getSettings,
   getSubscriptions,
   reactivateSubscription,
@@ -113,6 +114,14 @@ async function stopSubscription(item) {
   await render();
 }
 
+async function permanentlyDeleteSubscription(item) {
+  const confirmed = confirm(`永久刪除 ${item.name}？此操作無法復原。`);
+  if (!confirmed) return;
+  await deleteSubscription(item.id);
+  await scheduleAllAlarms(await getSubscriptions());
+  await render();
+}
+
 async function reactivate(item) {
   const nextDate = prompt("請輸入新的下次扣款日期（YYYY-MM-DD）", todayString());
   if (!nextDate || !/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) return;
@@ -200,6 +209,7 @@ function createSubscriptionItem(item, settings, index) {
     appendAction(actions, "停止訂閱", "text-button danger-text", () => stopSubscription(item));
   } else {
     appendAction(actions, "重新啟用", "text-button", () => reactivate(item));
+    appendAction(actions, "永久刪除", "text-button danger-text", () => permanentlyDeleteSubscription(item));
   }
 
   card.append(spendBar, content, menu, actions);

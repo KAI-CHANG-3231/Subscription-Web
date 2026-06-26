@@ -1,5 +1,5 @@
 import { addSubscription, getSubscriptions, updateSubscription } from "../utils/storage.js";
-import { todayString } from "../utils/date.js";
+import { getNextBillingDate, todayString } from "../utils/date.js";
 import { CATEGORIES, PRESETS } from "../utils/presets.js";
 import { scheduleAllAlarms } from "../utils/notification.js";
 
@@ -57,12 +57,21 @@ function populateOptions() {
   });
 }
 
-function toggleCycleFields() {
+function syncMonthlyNextBillingDate() {
+  if (cycleSelect.value !== "monthly" || !startDateInput.value) return;
+  nextBillingDateInput.value = getNextBillingDate(startDateInput.value, "monthly", null);
+}
+
+function toggleCycleFields(options = {}) {
   const isCustom = cycleSelect.value === "custom";
   const isOnce = cycleSelect.value === "once";
   cycleDaysRow.hidden = !isCustom;
   cycleDaysInput.required = isCustom;
   onceHint.hidden = !isOnce;
+
+  if (options.syncDate) {
+    syncMonthlyNextBillingDate();
+  }
 
   if (!editingId) {
     setReminderValues(isOnce ? [3, 1] : [7, 1]);
@@ -120,6 +129,7 @@ function validateForm() {
   if (!Number.isFinite(fee) || fee <= 0) return "費用金額必須大於 0。";
   if (!date) return "請選擇下次扣款日期。";
   if (!startDate) return "請選擇訂閱開始日。";
+  if (startDate > date) return "訂閱開始日不可晚於下次扣款日期。";
   if (!editingId && date < todayString()) return "新增訂閱的扣款日期不得為過去日期。";
   if (cycleSelect.value === "custom" && (!Number.isInteger(cycleDays) || cycleDays <= 0)) {
     return "自訂週期天數必須是大於 0 的整數。";
@@ -202,7 +212,7 @@ async function initialize() {
     fillForm({
       category: "影音串流",
       cycle: "monthly",
-      nextBillingDate: dateParam || todayString(),
+      nextBillingDate: dateParam || getNextBillingDate(todayString(), "monthly", null),
       startDate: todayString(),
       status: "active",
       reminderDays: [7, 1],
@@ -215,7 +225,8 @@ presetSelect.addEventListener("change", () => {
   const preset = PRESETS[Number(presetSelect.value)];
   applyPreset(preset);
 });
-cycleSelect.addEventListener("change", toggleCycleFields);
+cycleSelect.addEventListener("change", () => toggleCycleFields({ syncDate: true }));
+startDateInput.addEventListener("change", syncMonthlyNextBillingDate);
 colorInput.addEventListener("input", () => {
   presetPreview.style.backgroundColor = colorInput.value;
 });
