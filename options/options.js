@@ -2,10 +2,10 @@ import {
   DEFAULT_SETTINGS,
   getSettings,
   getSubscriptions,
+  normalizeSubscription,
   saveSettings,
   saveSubscriptions
 } from "../utils/storage.js";
-import { todayString } from "../utils/date.js";
 import { scheduleAllAlarms } from "../utils/notification.js";
 
 const settingsForm = document.querySelector("#settings-form");
@@ -14,6 +14,8 @@ const rateUsdInput = document.querySelector("#rate-usd");
 const rateJpyInput = document.querySelector("#rate-jpy");
 const rateEurInput = document.querySelector("#rate-eur");
 const enableNotificationsInput = document.querySelector("#enable-notifications");
+const enableNewTabInput = document.querySelector("#enable-newtab");
+const showExpiredInput = document.querySelector("#show-expired");
 const messageEl = document.querySelector("#settings-message");
 const exportButton = document.querySelector("#export-data");
 const importFileInput = document.querySelector("#import-file");
@@ -27,32 +29,6 @@ function setMessage(message, isSuccess = false) {
 
 function getImportMode() {
   return document.querySelector('input[name="importMode"]:checked')?.value || "merge";
-}
-
-function normalizeSubscription(item) {
-  const fee = Number(item.fee);
-  const cycle = ["monthly", "yearly", "custom"].includes(item.cycle) ? item.cycle : "monthly";
-  return {
-    id: typeof item.id === "string" && item.id ? item.id : crypto.randomUUID(),
-    name: String(item.name || "").trim(),
-    category: ["streaming", "music", "tools", "gaming", "ai", "other"].includes(item.category)
-      ? item.category
-      : "other",
-    fee: Number.isFinite(fee) && fee > 0 ? fee : 1,
-    currency: ["TWD", "USD", "JPY", "EUR"].includes(item.currency) ? item.currency : "TWD",
-    cycle,
-    cycleDays: cycle === "custom" ? Math.max(1, Number(item.cycleDays) || 30) : null,
-    nextBillingDate: /^\d{4}-\d{2}-\d{2}$/.test(item.nextBillingDate || "")
-      ? item.nextBillingDate
-      : todayString(),
-    reminderDays: Array.isArray(item.reminderDays) && item.reminderDays.length
-      ? item.reminderDays.map(Number).filter((day) => day >= 0)
-      : [7, 1],
-    color: /^#[0-9a-f]{6}$/i.test(item.color || "") ? item.color : "#ffffff",
-    notes: String(item.notes || ""),
-    createdAt: /^\d{4}-\d{2}-\d{2}$/.test(item.createdAt || "") ? item.createdAt : todayString(),
-    isActive: item.isActive !== false
-  };
 }
 
 function validateSettings(settings) {
@@ -75,7 +51,8 @@ function readSettingsFromForm() {
       EUR: Number(rateEurInput.value)
     },
     enableNotifications: enableNotificationsInput.checked,
-    enableNewTab: false
+    enableNewTab: false,
+    showExpiredInDashboard: showExpiredInput.checked
   };
 }
 
@@ -85,6 +62,8 @@ function fillSettings(settings) {
   rateJpyInput.value = String(settings.exchangeRates.JPY);
   rateEurInput.value = String(settings.exchangeRates.EUR);
   enableNotificationsInput.checked = settings.enableNotifications;
+  enableNewTabInput.checked = false;
+  showExpiredInput.checked = settings.showExpiredInDashboard;
 }
 
 async function handleSettingsSubmit(event) {
@@ -118,7 +97,7 @@ async function exportData() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "subscriptions.json";
+  link.download = "subtrack-backup.json";
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -141,7 +120,7 @@ async function importData() {
 
     const normalized = importedSubscriptions
       .map(normalizeSubscription)
-      .filter((item) => item.name);
+      .filter((item) => item.name && item.fee > 0);
     const current = await getSubscriptions();
     const nextSubscriptions = getImportMode() === "replace"
       ? normalized
@@ -150,7 +129,7 @@ async function importData() {
     await saveSubscriptions(nextSubscriptions);
 
     if (!Array.isArray(parsed) && parsed.settings) {
-      await saveSettings({ ...(await getSettings()), ...parsed.settings });
+      await saveSettings({ ...(await getSettings()), ...parsed.settings, enableNewTab: false });
       fillSettings(await getSettings());
     }
 

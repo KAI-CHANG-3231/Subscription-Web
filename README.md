@@ -1,22 +1,19 @@
 # SubTrack
 
-SubTrack 是一個純原生 JavaScript 開發的 Chrome Extension，用來手動管理個人訂閱服務、估算每月支出，並在扣款前透過 Chrome 通知提醒。
-
-所有資料都儲存在本機 `chrome.storage.local`，不需要後端、帳號或 npm 套件。
+SubTrack 是一個 Manifest V3 Chrome Extension，用來手動記錄個人數位訂閱、估算有效月費，並在扣款前透過 Chrome 通知提醒。資料全部儲存在本機 `chrome.storage.local`，不需要後端、帳號或 npm 套件。
 
 ## 功能
 
-- Manifest V3 Chrome 擴充功能
-- Popup 快速查看本月總支出與即將扣款項目
-- 獨立 Dashboard 總覽頁，支援分類篩選與系統 Dark Mode
-- 新增、編輯、刪除訂閱
-- 自訂月繳、年繳、固定天數週期
-- 支援 TWD、USD、JPY、EUR，匯率可手動設定
-- 扣款前 1、3、7、14 天提醒
-- 設定頁可匯入、匯出、清除資料
-- 常見服務 presets：Netflix、Spotify、ChatGPT Plus、Claude Pro、GitHub Copilot 等
+- Popup 快速查看本月有效訂閱總支出
+- 訂閱狀態：訂閱中、已暫停、已到期
+- 單次訂閱：到期後自動標記為已到期，不再續期
+- Dashboard 總覽頁：分類篩選、狀態篩選、最近 3 筆扣款
+- 新增、編輯、暫停、停止、恢復、重新啟用訂閱
+- 支援 TWD、USD、JPY、EUR 與手動匯率
+- 匯入、匯出、清除資料
+- Bright fintech 視覺設計：Spend Bar、倒數 chip、滑動式 tab indicator
 
-## 安裝方式
+## 安裝
 
 1. 開啟 Chrome，進入 `chrome://extensions`
 2. 開啟右上角「開發人員模式」
@@ -27,66 +24,51 @@ SubTrack 是一個純原生 JavaScript 開發的 Chrome Extension，用來手動
 C:\Users\momoi\OneDrive\Desktop\codex專案\Subscription-Web
 ```
 
-載入後可從工具列開啟 popup。SubTrack 不會覆蓋 Chrome 原本的新分頁；需要完整總覽時，請在 popup 右上角點「開啟總覽」。
+SubTrack 目前不覆蓋 Chrome 原生新分頁，這是為了保留你平常使用 Chrome 主頁的習慣。完整 Dashboard 可從 popup 右上角的總覽按鈕開啟。
 
 ## 專案結構
 
 ```text
 .
 ├── manifest.json
-├── background/
-│   └── service-worker.js
+├── background/service-worker.js
 ├── popup/
-│   ├── popup.html
-│   ├── popup.js
-│   └── popup.css
 ├── newtab/
-│   ├── newtab.html
-│   ├── newtab.js
-│   └── newtab.css
 ├── pages/
-│   ├── add-edit.html
-│   ├── add-edit.js
-│   └── add-edit.css
 ├── options/
-│   ├── options.html
-│   ├── options.js
-│   └── options.css
 ├── utils/
-│   ├── storage.js
-│   ├── date.js
-│   ├── currency.js
-│   ├── notification.js
-│   └── presets.js
 └── icons/
-    ├── icon-16.png
-    ├── icon-48.png
-    └── icon-128.png
 ```
 
-## 資料格式
-
-訂閱資料儲存在 `chrome.storage.local` 的 `subscriptions` key：
+## 訂閱資料格式
 
 ```json
 {
-  "id": "uuid-v4",
+  "id": "crypto.randomUUID()",
   "name": "Netflix",
-  "category": "streaming",
+  "category": "影音串流",
   "fee": 390,
   "currency": "TWD",
   "cycle": "monthly",
   "cycleDays": null,
   "nextBillingDate": "2026-07-15",
+  "startDate": "2026-06-26",
+  "status": "active",
+  "statusHistory": [
+    {
+      "status": "active",
+      "changedAt": "2026-06-26",
+      "note": "建立訂閱"
+    }
+  ],
   "reminderDays": [7, 1],
   "color": "#e50914",
   "notes": "",
-  "createdAt": "2026-06-26",
-  "isActive": true
+  "createdAt": "2026-06-26"
 }
 ```
 
-設定資料儲存在 `settings` key：
+## 設定資料格式
 
 ```json
 {
@@ -97,20 +79,28 @@ C:\Users\momoi\OneDrive\Desktop\codex專案\Subscription-Web
     "EUR": 35
   },
   "enableNotifications": true,
-  "enableNewTab": false
+  "enableNewTab": false,
+  "showExpiredInDashboard": true
 }
 ```
 
+## 狀態邏輯
+
+- `active`：正常計費與提醒
+- `paused`：保留資料，不計費、不提醒
+- `expired`：到期或停止，不計費、不提醒
+- `once` 單次訂閱到期後，service worker 會自動改為 `expired`
+- 恢復或重新啟用時，需要指定新的下次扣款日期
+
 ## 開發備註
 
-- 不使用外部框架或 npm 套件
-- JavaScript 使用 ES Modules
-- Chrome API 操作集中在 `utils/storage.js` 與 `utils/notification.js`
-- 日期計算使用原生 `Date`
-- UI 不使用 `innerHTML` 或 `eval()`
-- 通知排程由 `chrome.alarms` 建立，新增、編輯、刪除或調整設定後會重新排程
-- 為保留 Chrome 原生主頁，本專案未啟用 `chrome_url_overrides.newtab`
+- 純原生 JavaScript ES Modules
+- 不使用 CSS framework、npm 套件、`innerHTML` 或 `eval()`
+- Chrome API 呼叫集中在 storage、notification 與 service worker
+- 通知排程使用 `chrome.alarms`
+- UI 支援 `prefers-reduced-motion: reduce`
+- Dashboard / Popup 使用 inline SVG icon，不使用 emoji icon
 
 ## 驗證
 
-已使用 bundled Node 對所有 `.js` 檔案執行語法檢查，並確認專案內沒有 `innerHTML` 或 `eval()`。
+已使用 bundled Node 對所有 `.js` 檔案執行語法檢查，並確認專案內沒有 `innerHTML`、`eval()`、emoji icon、Bootstrap 類型陰影或 `cursor: default`。

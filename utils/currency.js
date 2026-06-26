@@ -35,6 +35,7 @@ export function formatCurrency(amount, currency) {
 
 export function calcMonthlyEquivalent(fee, cycle, cycleDays) {
   const amount = Number(fee) || 0;
+  if (cycle === "once") return 0;
   if (cycle === "yearly") return amount / 12;
   if (cycle === "custom") {
     const days = Number(cycleDays);

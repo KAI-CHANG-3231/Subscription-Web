@@ -1,5 +1,5 @@
 import { DEFAULT_SETTINGS, getSettings, getSubscriptions, saveSettings, saveSubscriptions } from "../utils/storage.js";
-import { getDaysUntil, getNextBillingDate } from "../utils/date.js";
+import { getDaysUntil, getNextBillingDate, todayString } from "../utils/date.js";
 import { handleAlarm, scheduleAllAlarms } from "../utils/notification.js";
 
 async function initializeSettings() {
@@ -7,17 +7,30 @@ async function initializeSettings() {
   await saveSettings({ ...DEFAULT_SETTINGS, ...settings });
 }
 
-async function rollForwardOverdueSubscriptions() {
+async function reconcileSubscriptions() {
   const subscriptions = await getSubscriptions();
   let didUpdate = false;
 
   const nextList = subscriptions.map((item) => {
-    if (item.isActive === false || getDaysUntil(item.nextBillingDate) >= 0) return item;
+    if (item.status !== "active" || getDaysUntil(item.nextBillingDate) >= 0) return item;
+
+    if (item.cycle === "once") {
+      didUpdate = true;
+      return {
+        ...item,
+        status: "expired",
+        statusHistory: [
+          ...item.statusHistory,
+          { status: "expired", changedAt: todayString(), note: "單次訂閱到期" }
+        ]
+      };
+    }
 
     let nextBillingDate = item.nextBillingDate;
     let guard = 0;
-    while (getDaysUntil(nextBillingDate) < 0 && guard < 24) {
+    while (getDaysUntil(nextBillingDate) < 0 && guard < 36) {
       nextBillingDate = getNextBillingDate(nextBillingDate, item.cycle, item.cycleDays);
+      if (!nextBillingDate) break;
       guard += 1;
     }
 
@@ -34,17 +47,17 @@ async function rollForwardOverdueSubscriptions() {
 
 chrome.runtime.onInstalled.addListener(() => {
   initializeSettings()
-    .then(getSubscriptions)
-    .then(scheduleAllAlarms)
+    .then(reconcileSubscriptions)
     .catch((error) => console.error("SubTrack installation setup failed", error));
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  rollForwardOverdueSubscriptions()
+  reconcileSubscriptions()
     .catch((error) => console.error("SubTrack startup check failed", error));
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   handleAlarm(alarm.name)
+    .then(reconcileSubscriptions)
     .catch((error) => console.error("SubTrack alarm failed", error));
 });

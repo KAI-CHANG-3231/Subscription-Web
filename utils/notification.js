@@ -1,5 +1,5 @@
 import { getSettings, getSubscriptions } from "./storage.js";
-import { getDaysUntil, formatDate } from "./date.js";
+import { formatDate, getDaysUntil } from "./date.js";
 
 const ALARM_PREFIX = "subtrack_";
 
@@ -30,11 +30,13 @@ export async function scheduleAllAlarms(subscriptions) {
 
     if (!settings.enableNotifications) return;
 
-    const activeSubscriptions = (subscriptions || []).filter((item) => item.isActive !== false);
+    const activeSubscriptions = (subscriptions || []).filter((item) => item.status === "active");
     for (const item of activeSubscriptions) {
       const reminderDays = Array.isArray(item.reminderDays) && item.reminderDays.length
         ? item.reminderDays
-        : [7, 1];
+        : item.cycle === "once"
+          ? [3, 1]
+          : [7, 1];
 
       for (const daysAhead of reminderDays) {
         const daysUntil = getDaysUntil(item.nextBillingDate);
@@ -60,7 +62,7 @@ export async function handleAlarm(alarmName) {
 
     const subscriptions = await getSubscriptions();
     const item = subscriptions.find((subscription) => subscription.id === parsed.id);
-    if (!item || item.isActive === false) return;
+    if (!item || item.status !== "active") return;
 
     const message = parsed.daysAhead === 0
       ? `${item.name} 今天扣款。`

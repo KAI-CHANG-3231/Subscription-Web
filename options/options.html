@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SubTrack 設定</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="options.css">
   </head>
   <body>
@@ -49,6 +52,15 @@
           <label class="toggle-row">
             <span>推播提醒</span>
             <input id="enable-notifications" type="checkbox">
+          </label>
+          <label class="toggle-row">
+            <span>新分頁覆蓋</span>
+            <input id="enable-newtab" type="checkbox" disabled>
+          </label>
+          <p class="hint">目前保留 Chrome 原生新分頁；完整總覽可從 popup 右上角開啟。</p>
+          <label class="toggle-row">
+            <span>Dashboard 顯示已到期訂閱</span>
+            <input id="show-expired" type="checkbox">
           </label>
         </section>
 

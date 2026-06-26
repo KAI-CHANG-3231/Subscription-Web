@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SubTrack 訂閱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="add-edit.css">
   </head>
   <body>
@@ -13,15 +16,23 @@
           <p class="eyebrow">SubTrack</p>
           <h1 id="page-title">新增訂閱</h1>
         </div>
-        <button id="close-page" class="icon-button" type="button" title="關閉" aria-label="關閉">×</button>
+        <button id="close-page" class="icon-button" type="button" title="關閉" aria-label="關閉">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </button>
       </header>
 
       <form id="subscription-form" class="form-panel" novalidate>
         <label>
           <span>常見服務</span>
-          <select id="preset-select">
-            <option value="">自訂服務</option>
-          </select>
+          <div class="preset-row">
+            <span id="preset-preview" class="preset-preview" aria-hidden="true"></span>
+            <select id="preset-select">
+              <option value="">自訂服務</option>
+            </select>
+          </div>
         </label>
 
         <label>
@@ -29,70 +40,76 @@
           <input id="name" name="name" type="text" autocomplete="off" required>
         </label>
 
-        <div class="form-grid">
-          <label>
-            <span>分類</span>
-            <select id="category" name="category" required></select>
-          </label>
+        <label>
+          <span>分類</span>
+          <select id="category" name="category" required></select>
+        </label>
 
-          <label>
-            <span>幣別</span>
-            <select id="currency" name="currency">
-              <option value="TWD">TWD</option>
-              <option value="USD">USD</option>
-              <option value="JPY">JPY</option>
-              <option value="EUR">EUR</option>
-            </select>
-          </label>
-        </div>
+        <label>
+          <span>費用金額</span>
+          <input id="fee" name="fee" type="number" min="0.01" step="0.01" required>
+        </label>
 
-        <div class="form-grid">
-          <label>
-            <span>費用金額</span>
-            <input id="fee" name="fee" type="number" min="0.01" step="0.01" required>
-          </label>
+        <label>
+          <span>幣別</span>
+          <select id="currency" name="currency">
+            <option value="TWD">TWD</option>
+            <option value="USD">USD</option>
+            <option value="JPY">JPY</option>
+            <option value="EUR">EUR</option>
+          </select>
+        </label>
 
-          <label>
-            <span>扣款週期</span>
-            <select id="cycle" name="cycle">
-              <option value="monthly">每月</option>
-              <option value="yearly">每年</option>
-              <option value="custom">自訂天數</option>
-            </select>
-          </label>
-        </div>
+        <label>
+          <span>扣款週期</span>
+          <select id="cycle" name="cycle">
+            <option value="monthly">每月</option>
+            <option value="yearly">每年</option>
+            <option value="custom">自訂天數</option>
+            <option value="once">單次訂閱（不自動續期）</option>
+          </select>
+        </label>
 
         <label id="cycle-days-row" hidden>
           <span>自訂週期天數</span>
           <input id="cycle-days" name="cycleDays" type="number" min="1" step="1">
         </label>
 
+        <p id="once-hint" class="hint" hidden>到期後將自動標記為已到期，可隨時重新啟用。</p>
+
         <label>
           <span>下次扣款日期</span>
           <input id="next-billing-date" name="nextBillingDate" type="date" required>
         </label>
 
+        <label>
+          <span>訂閱開始日</span>
+          <input id="start-date" name="startDate" type="date" required>
+        </label>
+
+        <label>
+          <span>狀態</span>
+          <select id="status" name="status">
+            <option value="active">訂閱中</option>
+            <option value="paused">已暫停</option>
+            <option value="expired">已到期</option>
+          </select>
+        </label>
+
         <fieldset>
           <legend>提前提醒</legend>
           <div class="checkbox-grid">
-            <label><input type="checkbox" name="reminderDays" value="1"> 1 天</label>
-            <label><input type="checkbox" name="reminderDays" value="3"> 3 天</label>
-            <label><input type="checkbox" name="reminderDays" value="7"> 7 天</label>
-            <label><input type="checkbox" name="reminderDays" value="14"> 14 天</label>
+            <label><input type="checkbox" name="reminderDays" value="1"> 前 1 天</label>
+            <label><input type="checkbox" name="reminderDays" value="3"> 前 3 天</label>
+            <label><input type="checkbox" name="reminderDays" value="7"> 前 7 天</label>
+            <label><input type="checkbox" name="reminderDays" value="14"> 前 14 天</label>
           </div>
         </fieldset>
 
-        <div class="form-grid">
-          <label>
-            <span>品牌顏色</span>
-            <input id="color" name="color" type="color" value="#ffffff">
-          </label>
-
-          <label class="active-row">
-            <span>啟用狀態</span>
-            <input id="is-active" name="isActive" type="checkbox" checked>
-          </label>
-        </div>
+        <label>
+          <span>品牌顏色</span>
+          <input id="color" name="color" type="color" value="#5c4efa">
+        </label>
 
         <label>
           <span>備註</span>

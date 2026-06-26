@@ -1,7 +1,7 @@
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function parseLocalDate(dateStr) {
-  const [year, month, day] = dateStr.split("-").map(Number);
+  const [year, month, day] = String(dateStr).split("-").map(Number);
   return new Date(year, month - 1, day);
 }
 
@@ -20,8 +20,10 @@ export function todayString() {
   return formatDateInput(new Date());
 }
 
-export function getNextBillingDate(lastDate, cycle, cycleDays) {
-  const base = parseLocalDate(lastDate);
+export function getNextBillingDate(fromDate, cycle, cycleDays) {
+  if (cycle === "once") return null;
+
+  const base = parseLocalDate(fromDate);
 
   if (cycle === "yearly") {
     const year = base.getFullYear() + 1;
@@ -45,6 +47,7 @@ export function getNextBillingDate(lastDate, cycle, cycleDays) {
 }
 
 export function getDaysUntil(dateStr) {
+  if (!dateStr) return 0;
   const target = parseLocalDate(dateStr);
   const today = parseLocalDate(todayString());
   return Math.round((target.getTime() - today.getTime()) / MS_PER_DAY);
@@ -61,4 +64,9 @@ export function formatDate(dateStr) {
 
 export function isOverdue(dateStr) {
   return getDaysUntil(dateStr) < 0;
+}
+
+export function isExpiringSoon(dateStr, days) {
+  const daysUntil = getDaysUntil(dateStr);
+  return daysUntil >= 0 && daysUntil <= Number(days);
 }
