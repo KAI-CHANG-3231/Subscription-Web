@@ -9,6 +9,7 @@ SubTrack 是一個 Manifest V3 Chrome Extension，用來手動記錄個人數位
 - 單次訂閱：到期後自動標記為已到期，不再續期
 - Dashboard 總覽頁：分類篩選、狀態篩選、最近 3 筆扣款
 - 新增、編輯、暫停、停止、恢復、重新啟用訂閱
+- 自訂分類：可新增或刪除分類，Dashboard 分類 tab 會跟著更新
 - 共同訂閱：可記錄共同成員、分攤人數與個人負擔金額
 - 付款方式：信用卡、金融卡、銀行轉帳、行動支付、現金或其他
 - 支援 TWD、USD、JPY、EUR 與手動匯率
@@ -23,11 +24,7 @@ SubTrack 是一個 Manifest V3 Chrome Extension，用來手動記錄個人數位
 4. 選擇本專案根目錄，也就是包含 `manifest.json` 的資料夾：
 
 ```text
-<<<<<<< HEAD
 .
-=======
-..\Subscription-Web
->>>>>>> c69d058e0ba46714b55a1d72ae117824246a7cd5
 ```
 
 SubTrack 目前不覆蓋 Chrome 原生新分頁，這是為了保留你平常使用 Chrome 主頁的習慣。完整 Dashboard 可從 popup 右上角的總覽按鈕開啟。
@@ -92,7 +89,12 @@ SubTrack 目前不覆蓋 Chrome 原生新分頁，這是為了保留你平常使
   "enableNotifications": true,
   "enableNewTab": false,
   "showExpiredInDashboard": true,
-  "summaryAmountMode": "personal"
+  "summaryAmountMode": "personal",
+  "categories": [
+    { "value": "影音串流", "label": "影音串流" },
+    { "value": "音樂", "label": "音樂" },
+    { "value": "其他", "label": "其他" }
+  ]
 }
 ```
 
@@ -105,6 +107,7 @@ SubTrack 目前不覆蓋 Chrome 原生新分頁，這是為了保留你平常使
 - 恢復或重新啟用時，需要指定新的下次扣款日期
 - 設定頁可選擇總金額顯示方式：`personal` 顯示分攤後個人金額，`gross` 顯示未分攤總金額
 - 卡片金額會優先使用 `personalFee`，若共同訂閱未填個人金額，則以 `fee / splitCount` 估算
+- 刪除分類時，使用該分類的訂閱會自動移到「其他」
 
 ## 開發備註
 

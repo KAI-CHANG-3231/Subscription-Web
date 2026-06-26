@@ -1,6 +1,6 @@
-import { addSubscription, getSubscriptions, updateSubscription } from "../utils/storage.js";
+import { addSubscription, getSettings, getSubscriptions, updateSubscription } from "../utils/storage.js";
 import { getNextBillingDate, todayString } from "../utils/date.js";
-import { CATEGORIES, PRESETS } from "../utils/presets.js";
+import { PRESETS } from "../utils/presets.js";
 import { scheduleAllAlarms } from "../utils/notification.js";
 
 const params = new URLSearchParams(location.search);
@@ -36,6 +36,7 @@ const cancelButton = document.querySelector("#cancel");
 
 let subscriptions = [];
 let editingItem = null;
+let settings = null;
 
 function setMessage(message, isSuccess = false) {
   messageEl.textContent = message;
@@ -48,7 +49,8 @@ function closePage() {
 }
 
 function populateOptions() {
-  CATEGORIES.forEach((category) => {
+  categorySelect.replaceChildren();
+  settings.categories.forEach((category) => {
     const option = document.createElement("option");
     option.value = category.value;
     option.textContent = category.label;
@@ -117,7 +119,9 @@ function syncSharedFields(options = {}) {
 function applyPreset(preset) {
   if (!preset) return;
   nameInput.value = preset.name;
-  categorySelect.value = preset.category;
+  categorySelect.value = Array.from(categorySelect.options).some((option) => option.value === preset.category)
+    ? preset.category
+    : "其他";
   feeInput.value = String(preset.defaultFee);
   currencySelect.value = preset.defaultCurrency;
   colorInput.value = preset.color;
@@ -251,6 +255,7 @@ async function handleSubmit(event) {
 }
 
 async function initialize() {
+  settings = await getSettings();
   populateOptions();
   subscriptions = await getSubscriptions();
   nextBillingDateInput.min = todayString();

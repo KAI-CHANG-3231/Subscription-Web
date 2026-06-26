@@ -7,7 +7,6 @@ import {
 } from "../utils/storage.js";
 import { calcMonthlyEquivalent, convertToDefault, formatCurrency, getPersonalFee } from "../utils/currency.js";
 import { formatDate, getDaysUntil, todayString } from "../utils/date.js";
-import { CATEGORIES } from "../utils/presets.js";
 import { scheduleAllAlarms } from "../utils/notification.js";
 
 const todayLabelEl = document.querySelector("#today-label");
@@ -27,8 +26,7 @@ let activeCategory = "all";
 let activeStatus = "active";
 let cachedSettings = null;
 let cachedSubscriptions = [];
-
-const tabs = [{ value: "all", label: "全部" }, ...CATEGORIES];
+let tabs = [{ value: "all", label: "全部" }];
 
 function openExtensionPage(path) {
   chrome.tabs.create({ url: chrome.runtime.getURL(path) });
@@ -145,6 +143,9 @@ function createTab(tab) {
 }
 
 function renderTabs() {
+  if (!tabs.some((tab) => tab.value === activeCategory)) {
+    activeCategory = "all";
+  }
   categoryTabsEl.replaceChildren(tabIndicatorEl, ...tabs.map(createTab));
   requestAnimationFrame(updateTabIndicator);
 }
@@ -339,6 +340,7 @@ function renderNearest(activeSubscriptions) {
 
 async function render() {
   cachedSettings = await getSettings();
+  tabs = [{ value: "all", label: "全部" }, ...cachedSettings.categories];
   cachedSubscriptions = await getSubscriptions();
   const activeSubscriptions = cachedSubscriptions.filter((item) => item.status === "active");
   const recurringActive = activeSubscriptions.filter((item) => item.cycle !== "once");

@@ -2,6 +2,7 @@ import {
   DEFAULT_SETTINGS,
   getSettings,
   getSubscriptions,
+  normalizeCategories,
   normalizeSubscription,
   saveSettings,
   saveSubscriptions
@@ -17,11 +18,16 @@ const rateEurInput = document.querySelector("#rate-eur");
 const enableNotificationsInput = document.querySelector("#enable-notifications");
 const enableNewTabInput = document.querySelector("#enable-newtab");
 const showExpiredInput = document.querySelector("#show-expired");
+const categoryNameInput = document.querySelector("#category-name");
+const addCategoryButton = document.querySelector("#add-category");
+const categoryListEl = document.querySelector("#category-list");
 const messageEl = document.querySelector("#settings-message");
 const exportButton = document.querySelector("#export-data");
 const importFileInput = document.querySelector("#import-file");
 const importButton = document.querySelector("#import-data");
 const clearButton = document.querySelector("#clear-data");
+
+let currentCategories = [];
 
 function setMessage(message, isSuccess = false) {
   messageEl.textContent = message;
@@ -55,11 +61,13 @@ function readSettingsFromForm() {
     enableNotifications: enableNotificationsInput.checked,
     enableNewTab: false,
     showExpiredInDashboard: showExpiredInput.checked,
-    summaryAmountMode
+    summaryAmountMode,
+    categories: currentCategories
   };
 }
 
 function fillSettings(settings) {
+  currentCategories = normalizeCategories(settings.categories);
   defaultCurrencyInput.value = settings.defaultCurrency;
   summaryAmountModeInputs.forEach((input) => {
     input.checked = input.value === (settings.summaryAmountMode || "personal");
@@ -70,6 +78,76 @@ function fillSettings(settings) {
   enableNotificationsInput.checked = settings.enableNotifications;
   enableNewTabInput.checked = false;
   showExpiredInput.checked = settings.showExpiredInDashboard;
+  renderCategoryList();
+}
+
+function renderCategoryList() {
+  categoryListEl.replaceChildren();
+  currentCategories.forEach((category) => {
+    const item = document.createElement("div");
+    item.className = "category-item";
+
+    const label = document.createElement("span");
+    label.textContent = category.label;
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "text-danger-button";
+    button.textContent = category.value === "其他" ? "保留" : "刪除";
+    button.disabled = category.value === "其他";
+    button.addEventListener("click", () => deleteCategory(category.value));
+
+    item.append(label, button);
+    categoryListEl.append(item);
+  });
+}
+
+async function persistCategories(nextCategories) {
+  currentCategories = normalizeCategories(nextCategories);
+  await saveSettings({ ...readSettingsFromForm(), categories: currentCategories });
+  renderCategoryList();
+}
+
+async function addCategory() {
+  const name = categoryNameInput.value.trim();
+  if (!name) {
+    setMessage("請輸入分類名稱。");
+    return;
+  }
+  if (currentCategories.some((category) => category.value === name)) {
+    setMessage("此分類已存在。");
+    return;
+  }
+
+  try {
+    await persistCategories([...currentCategories, { value: name, label: name }]);
+    categoryNameInput.value = "";
+    setMessage("分類已新增。", true);
+  } catch (error) {
+    console.error("Unable to add category", error);
+    setMessage("新增分類失敗。");
+  }
+}
+
+async function deleteCategory(categoryValue) {
+  if (categoryValue === "其他") return;
+  const confirmed = confirm(`刪除分類「${categoryValue}」？使用此分類的訂閱會移到「其他」。`);
+  if (!confirmed) return;
+
+  try {
+    const nextCategories = currentCategories.filter((category) => category.value !== categoryValue);
+    const subscriptions = await getSubscriptions();
+    const nextSubscriptions = subscriptions.map((item) => (
+      item.category === categoryValue ? { ...item, category: "其他" } : item
+    ));
+    await saveSubscriptions(nextSubscriptions);
+    await persistCategories(nextCategories);
+    await scheduleAllAlarms(nextSubscriptions);
+    setMessage("分類已刪除，相關訂閱已移至其他。", true);
+  } catch (error) {
+    console.error("Unable to delete category", error);
+    setMessage("刪除分類失敗。");
+  }
 }
 
 async function handleSettingsSubmit(event) {
@@ -168,6 +246,13 @@ async function initialize() {
 }
 
 settingsForm.addEventListener("submit", handleSettingsSubmit);
+addCategoryButton.addEventListener("click", addCategory);
+categoryNameInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    addCategory();
+  }
+});
 exportButton.addEventListener("click", exportData);
 importButton.addEventListener("click", importData);
 clearButton.addEventListener("click", clearData);

@@ -1,4 +1,5 @@
 import { todayString } from "./date.js";
+import { DEFAULT_CATEGORIES } from "./presets.js";
 
 export const DEFAULT_SETTINGS = {
   defaultCurrency: "TWD",
@@ -10,7 +11,8 @@ export const DEFAULT_SETTINGS = {
   enableNotifications: true,
   enableNewTab: false,
   showExpiredInDashboard: true,
-  summaryAmountMode: "personal"
+  summaryAmountMode: "personal",
+  categories: DEFAULT_CATEGORIES
 };
 
 const STORAGE_KEYS = {
@@ -27,16 +29,6 @@ const CATEGORY_MAP = {
   other: "其他"
 };
 
-const VALID_CATEGORIES = new Set([
-  "影音串流",
-  "音樂",
-  "生產工具",
-  "遊戲",
-  "AI服務",
-  "雲端儲存",
-  "其他"
-]);
-
 const VALID_STATUS = new Set(["active", "paused", "expired"]);
 const VALID_PAYMENT_METHODS = new Set([
   "credit_card",
@@ -51,16 +43,38 @@ function mergeSettings(settings = {}) {
   const summaryAmountMode = ["personal", "gross"].includes(settings.summaryAmountMode)
     ? settings.summaryAmountMode
     : DEFAULT_SETTINGS.summaryAmountMode;
+  const categories = normalizeCategories(settings.categories);
   return {
     ...DEFAULT_SETTINGS,
     ...settings,
     enableNewTab: false,
     summaryAmountMode,
+    categories,
     exchangeRates: {
       ...DEFAULT_SETTINGS.exchangeRates,
       ...(settings.exchangeRates || {})
     }
   };
+}
+
+export function normalizeCategories(categories) {
+  const source = Array.isArray(categories) && categories.length ? categories : DEFAULT_CATEGORIES;
+  const seen = new Set();
+  const normalized = source
+    .map((category) => {
+      const label = typeof category === "string" ? category : category?.label || category?.value;
+      const value = String(label || "").trim();
+      return value ? { value, label: value } : null;
+    })
+    .filter(Boolean)
+    .filter((category) => {
+      if (seen.has(category.value)) return false;
+      seen.add(category.value);
+      return true;
+    });
+
+  if (!seen.has("其他")) normalized.push({ value: "其他", label: "其他" });
+  return normalized;
 }
 
 function normalizeStatusHistory(item, status) {
@@ -87,7 +101,7 @@ export function normalizeSubscription(item = {}) {
     : item.isActive === false
       ? "paused"
       : "active";
-  const category = CATEGORY_MAP[item.category] || item.category;
+  const category = CATEGORY_MAP[item.category] || item.category || "其他";
   const cycle = ["monthly", "yearly", "custom", "once"].includes(item.cycle)
     ? item.cycle
     : "monthly";
@@ -109,7 +123,7 @@ export function normalizeSubscription(item = {}) {
   return {
     id: typeof item.id === "string" && item.id ? item.id : crypto.randomUUID(),
     name: String(item.name || "").trim(),
-    category: VALID_CATEGORIES.has(category) ? category : "其他",
+    category: String(category).trim() || "其他",
     fee: Math.max(0, Number(item.fee) || 0),
     currency: ["TWD", "USD", "JPY", "EUR"].includes(item.currency) ? item.currency : "TWD",
     cycle,

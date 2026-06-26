@@ -1,4 +1,4 @@
-export const CATEGORIES = [
+export const DEFAULT_CATEGORIES = [
   { value: "影音串流", label: "影音串流" },
   { value: "音樂", label: "音樂" },
   { value: "生產工具", label: "生產工具" },
@@ -7,6 +7,8 @@ export const CATEGORIES = [
   { value: "雲端儲存", label: "雲端儲存" },
   { value: "其他", label: "其他" }
 ];
+
+export const CATEGORIES = DEFAULT_CATEGORIES;
 
 export const STATUS_OPTIONS = [
   { value: "active", label: "訂閱中" },

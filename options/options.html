@@ -77,6 +77,18 @@
       </form>
 
       <section class="panel section">
+        <h2>分類管理</h2>
+        <div class="category-add-row">
+          <label>
+            <span>新增分類</span>
+            <input id="category-name" type="text" autocomplete="off" placeholder="例如：新聞、學習、健身">
+          </label>
+          <button id="add-category" class="secondary-button" type="button">新增</button>
+        </div>
+        <div id="category-list" class="category-list" aria-label="分類列表"></div>
+      </section>
+
+      <section class="panel section">
         <h2>資料備份</h2>
         <div class="action-row">
           <button id="export-data" class="secondary-button" type="button">匯出資料</button>
