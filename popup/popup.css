@@ -278,6 +278,14 @@ h2 {
   font-size: 12px;
 }
 
+.detail-line {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .countdown-chip {
   display: inline-flex;
   align-items: center;

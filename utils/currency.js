@@ -43,3 +43,14 @@ export function calcMonthlyEquivalent(fee, cycle, cycleDays) {
   }
   return amount;
 }
+
+export function getPersonalFee(item) {
+  const fee = Number(item?.fee) || 0;
+  if (!item?.isShared) return fee;
+
+  const personalFee = Number(item.personalFee);
+  if (Number.isFinite(personalFee) && personalFee > 0) return personalFee;
+
+  const splitCount = Math.max(1, Number(item.splitCount) || 1);
+  return fee / splitCount;
+}

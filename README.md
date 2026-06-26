@@ -9,6 +9,8 @@ SubTrack 是一個 Manifest V3 Chrome Extension，用來手動記錄個人數位
 - 單次訂閱：到期後自動標記為已到期，不再續期
 - Dashboard 總覽頁：分類篩選、狀態篩選、最近 3 筆扣款
 - 新增、編輯、暫停、停止、恢復、重新啟用訂閱
+- 共同訂閱：可記錄共同成員、分攤人數與個人負擔金額
+- 付款方式：信用卡、金融卡、銀行轉帳、行動支付、現金或其他
 - 支援 TWD、USD、JPY、EUR 與手動匯率
 - 匯入、匯出、清除資料
 - Bright fintech 視覺設計：Spend Bar、倒數 chip、滑動式 tab indicator
@@ -66,6 +68,11 @@ SubTrack 目前不覆蓋 Chrome 原生新分頁，這是為了保留你平常使
     }
   ],
   "reminderDays": [7, 1],
+  "isShared": true,
+  "sharedWith": ["小美", "小華"],
+  "splitCount": 3,
+  "personalFee": 130,
+  "paymentMethod": "credit_card",
   "color": "#e50914",
   "notes": "",
   "createdAt": "2026-06-26"
@@ -95,6 +102,7 @@ SubTrack 目前不覆蓋 Chrome 原生新分頁，這是為了保留你平常使
 - `expired`：到期或停止，不計費、不提醒
 - `once` 單次訂閱到期後，service worker 會自動改為 `expired`
 - 恢復或重新啟用時，需要指定新的下次扣款日期
+- 總月費與卡片金額會優先使用 `personalFee`，若共同訂閱未填個人金額，則以 `fee / splitCount` 估算
 
 ## 開發備註
 

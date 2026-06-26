@@ -256,6 +256,12 @@ legend {
   gap: 12px;
 }
 
+.shared-fields {
+  display: grid;
+  gap: 14px;
+  margin-top: 12px;
+}
+
 .checkbox-grid label {
   display: flex;
   align-items: center;

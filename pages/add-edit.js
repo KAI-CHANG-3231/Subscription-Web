@@ -15,6 +15,12 @@ const nameInput = document.querySelector("#name");
 const categorySelect = document.querySelector("#category");
 const feeInput = document.querySelector("#fee");
 const currencySelect = document.querySelector("#currency");
+const paymentMethodInput = document.querySelector("#payment-method");
+const isSharedInput = document.querySelector("#is-shared");
+const sharedFields = document.querySelector("#shared-fields");
+const sharedWithInput = document.querySelector("#shared-with");
+const splitCountInput = document.querySelector("#split-count");
+const personalFeeInput = document.querySelector("#personal-fee");
 const cycleSelect = document.querySelector("#cycle");
 const cycleDaysRow = document.querySelector("#cycle-days-row");
 const cycleDaysInput = document.querySelector("#cycle-days");
@@ -78,6 +84,35 @@ function toggleCycleFields(options = {}) {
   }
 }
 
+function getSharedNames() {
+  return sharedWithInput.value
+    .split(/[,\n，、]/)
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
+function syncSharedFields(options = {}) {
+  sharedFields.hidden = !isSharedInput.checked;
+  splitCountInput.required = isSharedInput.checked;
+  personalFeeInput.required = false;
+
+  if (!isSharedInput.checked) return;
+
+  const memberCount = getSharedNames().length + 1;
+  const currentSplitCount = Number(splitCountInput.value);
+  if (!Number.isFinite(currentSplitCount) || currentSplitCount < memberCount) {
+    splitCountInput.value = String(Math.max(2, memberCount));
+  }
+
+  const fee = Number(feeInput.value);
+  const splitCount = Number(splitCountInput.value);
+  if (Number.isFinite(fee) && fee > 0 && Number.isFinite(splitCount) && splitCount > 0) {
+    if (options.forcePersonalFee || !personalFeeInput.value) {
+      personalFeeInput.value = String(Number((fee / splitCount).toFixed(2)));
+    }
+  }
+}
+
 function applyPreset(preset) {
   if (!preset) return;
   nameInput.value = preset.name;
@@ -106,6 +141,11 @@ function fillForm(item) {
   categorySelect.value = item.category || "其他";
   feeInput.value = String(item.fee || "");
   currencySelect.value = item.currency || "TWD";
+  paymentMethodInput.value = item.paymentMethod || "credit_card";
+  isSharedInput.checked = Boolean(item.isShared);
+  sharedWithInput.value = Array.isArray(item.sharedWith) ? item.sharedWith.join("、") : "";
+  splitCountInput.value = String(item.splitCount || Math.max(2, (item.sharedWith?.length || 0) + 1));
+  personalFeeInput.value = item.personalFee ? String(item.personalFee) : "";
   cycleSelect.value = item.cycle || "monthly";
   cycleDaysInput.value = item.cycleDays ? String(item.cycleDays) : "";
   nextBillingDateInput.value = dateParam || item.nextBillingDate || todayString();
@@ -115,6 +155,7 @@ function fillForm(item) {
   presetPreview.style.backgroundColor = colorInput.value;
   notesInput.value = item.notes || "";
   setReminderValues(item.reminderDays || (item.cycle === "once" ? [3, 1] : [7, 1]));
+  syncSharedFields();
   toggleCycleFields();
 }
 
@@ -124,6 +165,8 @@ function validateForm() {
   const date = nextBillingDateInput.value;
   const startDate = startDateInput.value;
   const cycleDays = Number(cycleDaysInput.value);
+  const splitCount = Number(splitCountInput.value);
+  const personalFee = Number(personalFeeInput.value);
 
   if (!name) return "服務名稱不得空白。";
   if (!Number.isFinite(fee) || fee <= 0) return "費用金額必須大於 0。";
@@ -133,6 +176,12 @@ function validateForm() {
   if (!editingId && date < todayString()) return "新增訂閱的扣款日期不得為過去日期。";
   if (cycleSelect.value === "custom" && (!Number.isInteger(cycleDays) || cycleDays <= 0)) {
     return "自訂週期天數必須是大於 0 的整數。";
+  }
+  if (isSharedInput.checked) {
+    if (!Number.isInteger(splitCount) || splitCount < 2) return "共同訂閱的分攤人數至少要 2 人。";
+    if (personalFeeInput.value && (!Number.isFinite(personalFee) || personalFee <= 0)) {
+      return "我個人負擔金額必須大於 0。";
+    }
   }
   if (getReminderValues().length === 0) return "請至少選擇一個提醒天數。";
   return "";
@@ -153,6 +202,11 @@ function buildSubscription() {
     category: categorySelect.value,
     fee: Number(feeInput.value),
     currency: currencySelect.value,
+    paymentMethod: paymentMethodInput.value,
+    isShared: isSharedInput.checked,
+    sharedWith: isSharedInput.checked ? getSharedNames() : [],
+    splitCount: isSharedInput.checked ? Number(splitCountInput.value) : 1,
+    personalFee: isSharedInput.checked && personalFeeInput.value ? Number(personalFeeInput.value) : null,
     cycle: cycleSelect.value,
     cycleDays: cycleSelect.value === "custom" ? Number(cycleDaysInput.value) : null,
     nextBillingDate: nextBillingDateInput.value,
@@ -227,6 +281,10 @@ presetSelect.addEventListener("change", () => {
 });
 cycleSelect.addEventListener("change", () => toggleCycleFields({ syncDate: true }));
 startDateInput.addEventListener("change", syncMonthlyNextBillingDate);
+isSharedInput.addEventListener("change", () => syncSharedFields({ forcePersonalFee: true }));
+sharedWithInput.addEventListener("input", () => syncSharedFields());
+splitCountInput.addEventListener("input", () => syncSharedFields({ forcePersonalFee: true }));
+feeInput.addEventListener("input", () => syncSharedFields({ forcePersonalFee: true }));
 colorInput.addEventListener("input", () => {
   presetPreview.style.backgroundColor = colorInput.value;
 });

@@ -5,7 +5,7 @@ import {
   reactivateSubscription,
   updateStatus
 } from "../utils/storage.js";
-import { calcMonthlyEquivalent, convertToDefault, formatCurrency } from "../utils/currency.js";
+import { calcMonthlyEquivalent, convertToDefault, formatCurrency, getPersonalFee } from "../utils/currency.js";
 import { formatDate, getDaysUntil, todayString } from "../utils/date.js";
 import { scheduleAllAlarms } from "../utils/notification.js";
 
@@ -51,6 +51,25 @@ function getStatusLabel(status) {
   if (status === "paused") return "已暫停";
   if (status === "expired") return "已到期";
   return "訂閱中";
+}
+
+function getPaymentLabel(method) {
+  const labels = {
+    credit_card: "信用卡",
+    debit_card: "金融卡",
+    bank_transfer: "銀行轉帳",
+    mobile_payment: "行動支付",
+    cash: "現金",
+    other: "其他"
+  };
+  return labels[method] || labels.other;
+}
+
+function getSharedLabel(item) {
+  if (!item.isShared) return "";
+  const names = Array.isArray(item.sharedWith) ? item.sharedWith : [];
+  if (names.length) return `與 ${names.join("、")} 共用`;
+  return `${item.splitCount || 2} 人共同訂閱`;
 }
 
 function createMenuButton() {
@@ -171,20 +190,24 @@ function createSubscriptionItem(item, settings, index) {
   const feeValue = document.createElement("span");
   feeValue.className = "fee-value";
   const monthly = convertToDefault(
-    calcMonthlyEquivalent(item.fee, item.cycle, item.cycleDays),
+    calcMonthlyEquivalent(getPersonalFee(item), item.cycle, item.cycleDays),
     item.currency,
     settings
   );
   feeValue.textContent = item.cycle === "once"
-    ? formatCurrency(item.fee, item.currency)
+    ? formatCurrency(getPersonalFee(item), item.currency)
     : formatCurrency(monthly, settings.defaultCurrency);
 
   const cycleLabel = document.createElement("span");
   cycleLabel.className = "cycle-label";
   cycleLabel.textContent = `${getCycleLabel(item)} · ${formatDate(item.nextBillingDate)}`;
 
+  const detail = document.createElement("span");
+  detail.className = "detail-line";
+  detail.textContent = [getPaymentLabel(item.paymentMethod), getSharedLabel(item)].filter(Boolean).join(" · ");
+
   feeRow.append(feeValue, cycleLabel);
-  content.append(titleRow, feeRow, createCountdownChip(item));
+  content.append(titleRow, feeRow, detail, createCountdownChip(item));
 
   const menu = document.createElement("div");
   menu.className = "card-menu";
@@ -231,7 +254,7 @@ async function render() {
     .sort((a, b) => a.nextBillingDate.localeCompare(b.nextBillingDate));
 
   const monthlyTotal = activeSubscriptions.reduce((sum, item) => {
-    const monthly = calcMonthlyEquivalent(item.fee, item.cycle, item.cycleDays);
+    const monthly = calcMonthlyEquivalent(getPersonalFee(item), item.cycle, item.cycleDays);
     return sum + convertToDefault(monthly, item.currency, settings);
   }, 0);
 

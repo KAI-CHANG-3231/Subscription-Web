@@ -37,6 +37,14 @@ const VALID_CATEGORIES = new Set([
 ]);
 
 const VALID_STATUS = new Set(["active", "paused", "expired"]);
+const VALID_PAYMENT_METHODS = new Set([
+  "credit_card",
+  "debit_card",
+  "bank_transfer",
+  "mobile_payment",
+  "cash",
+  "other"
+]);
 
 function mergeSettings(settings = {}) {
   return {
@@ -83,6 +91,15 @@ export function normalizeSubscription(item = {}) {
     : cycle === "once"
       ? [3, 1]
       : [7, 1];
+  const sharedWith = Array.isArray(item.sharedWith)
+    ? item.sharedWith.map((name) => String(name).trim()).filter(Boolean)
+    : String(item.sharedWith || "")
+      .split(",")
+      .map((name) => name.trim())
+      .filter(Boolean);
+  const isShared = Boolean(item.isShared || sharedWith.length);
+  const splitCount = isShared ? Math.max(2, Number(item.splitCount) || sharedWith.length + 1) : 1;
+  const personalFee = Number(item.personalFee);
 
   return {
     id: typeof item.id === "string" && item.id ? item.id : crypto.randomUUID(),
@@ -101,6 +118,11 @@ export function normalizeSubscription(item = {}) {
     status,
     statusHistory: normalizeStatusHistory(item, status),
     reminderDays,
+    isShared,
+    sharedWith,
+    splitCount,
+    personalFee: isShared && Number.isFinite(personalFee) && personalFee > 0 ? personalFee : null,
+    paymentMethod: VALID_PAYMENT_METHODS.has(item.paymentMethod) ? item.paymentMethod : "credit_card",
     color: /^#[0-9a-f]{6}$/i.test(item.color || "") ? item.color : "#5c4efa",
     notes: String(item.notes || ""),
     createdAt: /^\d{4}-\d{2}-\d{2}$/.test(item.createdAt || "") ? item.createdAt : todayString()
