@@ -1,4 +1,5 @@
 import { addSubscription, getSettings, getSubscriptions, updateSubscription } from "../utils/storage.js";
+import { calcSplitPersonalFee, isZeroDecimalCurrency } from "../utils/currency.js";
 import { getNextBillingDate, todayString } from "../utils/date.js";
 import { PRESETS } from "../utils/presets.js";
 import { scheduleAllAlarms } from "../utils/notification.js";
@@ -98,6 +99,7 @@ function syncSharedFields(options = {}) {
   sharedFields.hidden = !isShared;
   splitCountInput.required = isShared;
   personalFeeInput.required = false;
+  personalFeeInput.step = isZeroDecimalCurrency(currencySelect.value) ? "1" : "0.01";
 
   if (!isShared) return;
 
@@ -111,7 +113,7 @@ function syncSharedFields(options = {}) {
   const splitCount = Number(splitCountInput.value);
   if (Number.isFinite(fee) && fee > 0 && Number.isFinite(splitCount) && splitCount > 0) {
     if (options.forcePersonalFee || !personalFeeInput.value) {
-      personalFeeInput.value = String(Number((fee / splitCount).toFixed(2)));
+      personalFeeInput.value = String(calcSplitPersonalFee(fee, splitCount, currencySelect.value));
     }
   }
 }
@@ -126,6 +128,7 @@ function applyPreset(preset) {
   currencySelect.value = preset.defaultCurrency;
   colorInput.value = preset.color;
   presetPreview.style.backgroundColor = preset.color;
+  syncSharedFields({ forcePersonalFee: true });
 }
 
 function setReminderValues(values) {
@@ -150,7 +153,9 @@ function fillForm(item) {
   subscriptionScopeSelect.value = item.isShared ? "shared" : "personal";
   sharedWithInput.value = Array.isArray(item.sharedWith) ? item.sharedWith.join("、") : "";
   splitCountInput.value = String(item.splitCount || Math.max(2, (item.sharedWith?.length || 0) + 1));
-  personalFeeInput.value = item.personalFee ? String(item.personalFee) : "";
+  personalFeeInput.value = item.personalFee
+    ? String(isZeroDecimalCurrency(item.currency) ? Math.ceil(Number(item.personalFee)) : item.personalFee)
+    : "";
   cycleSelect.value = item.cycle || "monthly";
   cycleDaysInput.value = item.cycleDays ? String(item.cycleDays) : "";
   nextBillingDateInput.value = dateParam || item.nextBillingDate || todayString();
@@ -186,6 +191,9 @@ function validateForm() {
     if (!Number.isInteger(splitCount) || splitCount < 2) return "共同訂閱的分攤人數至少要 2 人。";
     if (personalFeeInput.value && (!Number.isFinite(personalFee) || personalFee <= 0)) {
       return "我個人負擔金額必須大於 0。";
+    }
+    if (personalFeeInput.value && isZeroDecimalCurrency(currencySelect.value) && !Number.isInteger(personalFee)) {
+      return "台幣與日幣的個人負擔金額不可有小數點。";
     }
   }
   if (getReminderValues().length === 0) return "請至少選擇一個提醒天數。";
@@ -291,6 +299,7 @@ subscriptionScopeSelect.addEventListener("change", () => syncSharedFields({ forc
 sharedWithInput.addEventListener("input", () => syncSharedFields());
 splitCountInput.addEventListener("input", () => syncSharedFields({ forcePersonalFee: true }));
 feeInput.addEventListener("input", () => syncSharedFields({ forcePersonalFee: true }));
+currencySelect.addEventListener("change", () => syncSharedFields({ forcePersonalFee: true }));
 colorInput.addEventListener("input", () => {
   presetPreview.style.backgroundColor = colorInput.value;
 });

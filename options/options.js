@@ -10,6 +10,7 @@ import {
 import { scheduleAllAlarms } from "../utils/notification.js";
 
 const settingsForm = document.querySelector("#settings-form");
+const backDashboardButton = document.querySelector("#back-dashboard");
 const defaultCurrencyInput = document.querySelector("#default-currency");
 const summaryAmountModeInputs = Array.from(document.querySelectorAll('input[name="summaryAmountMode"]'));
 const rateUsdInput = document.querySelector("#rate-usd");
@@ -28,6 +29,10 @@ const importButton = document.querySelector("#import-data");
 const clearButton = document.querySelector("#clear-data");
 
 let currentCategories = [];
+
+function openExtensionPage(path) {
+  location.href = chrome.runtime.getURL(path);
+}
 
 function setMessage(message, isSuccess = false) {
   messageEl.textContent = message;
@@ -246,6 +251,7 @@ async function initialize() {
 }
 
 settingsForm.addEventListener("submit", handleSettingsSubmit);
+backDashboardButton.addEventListener("click", () => openExtensionPage("newtab/newtab.html"));
 addCategoryButton.addEventListener("click", addCategory);
 categoryNameInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {

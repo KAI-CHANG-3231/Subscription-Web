@@ -5,6 +5,8 @@ const CURRENCY_OPTIONS = {
   EUR: { locale: "de-DE", currency: "EUR", maximumFractionDigits: 2 }
 };
 
+const ZERO_DECIMAL_CURRENCIES = new Set(["TWD", "JPY"]);
+
 function toTwd(amount, currency, settings) {
   if (currency === "TWD") return amount;
   const rate = Number(settings.exchangeRates?.[currency]);
@@ -44,13 +46,31 @@ export function calcMonthlyEquivalent(fee, cycle, cycleDays) {
   return amount;
 }
 
+export function isZeroDecimalCurrency(currency) {
+  return ZERO_DECIMAL_CURRENCIES.has(currency);
+}
+
+export function calcSplitPersonalFee(fee, splitCount, currency) {
+  const amount = Number(fee) || 0;
+  const count = Math.max(1, Number(splitCount) || 1);
+  const split = amount / count;
+
+  if (isZeroDecimalCurrency(currency)) {
+    return Math.ceil(split);
+  }
+
+  return Number(split.toFixed(2));
+}
+
 export function getPersonalFee(item) {
   const fee = Number(item?.fee) || 0;
   if (!item?.isShared) return fee;
 
   const personalFee = Number(item.personalFee);
-  if (Number.isFinite(personalFee) && personalFee > 0) return personalFee;
+  if (Number.isFinite(personalFee) && personalFee > 0) {
+    return isZeroDecimalCurrency(item.currency) ? Math.ceil(personalFee) : personalFee;
+  }
 
   const splitCount = Math.max(1, Number(item.splitCount) || 1);
-  return fee / splitCount;
+  return calcSplitPersonalFee(fee, splitCount, item.currency);
 }
