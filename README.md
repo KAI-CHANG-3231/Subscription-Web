@@ -21,7 +21,11 @@ SubTrack 是一個 Manifest V3 Chrome Extension，用來手動記錄個人數位
 4. 選擇本專案根目錄，也就是包含 `manifest.json` 的資料夾：
 
 ```text
+<<<<<<< HEAD
 .
+=======
+..\Subscription-Web
+>>>>>>> c69d058e0ba46714b55a1d72ae117824246a7cd5
 ```
 
 SubTrack 目前不覆蓋 Chrome 原生新分頁，這是為了保留你平常使用 Chrome 主頁的習慣。完整 Dashboard 可從 popup 右上角的總覽按鈕開啟。
