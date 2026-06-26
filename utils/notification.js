@@ -2,6 +2,8 @@ import { getSettings, getSubscriptions } from "./storage.js";
 import { formatDate, getDaysUntil } from "./date.js";
 
 const ALARM_PREFIX = "subtrack_";
+const NOTIFICATION_LOG_KEY = "notificationLog";
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function getAlarmName(id, daysAhead) {
   return `${ALARM_PREFIX}${id}_${daysAhead}`;
@@ -18,9 +20,35 @@ function parseAlarmName(alarmName) {
   };
 }
 
+function getReminderLogKey(item, daysAhead) {
+  return `${item.id}|${item.nextBillingDate}|${daysAhead}`;
+}
+
+async function getNotificationLog() {
+  try {
+    const result = await chrome.storage.local.get(NOTIFICATION_LOG_KEY);
+    return result[NOTIFICATION_LOG_KEY] && typeof result[NOTIFICATION_LOG_KEY] === "object"
+      ? result[NOTIFICATION_LOG_KEY]
+      : {};
+  } catch (error) {
+    console.error("Unable to read notification log", error);
+    return {};
+  }
+}
+
+async function saveNotificationLog(log) {
+  try {
+    const entries = Object.entries(log).slice(-500);
+    await chrome.storage.local.set({ [NOTIFICATION_LOG_KEY]: Object.fromEntries(entries) });
+  } catch (error) {
+    console.error("Unable to save notification log", error);
+  }
+}
+
 export async function scheduleAllAlarms(subscriptions) {
   try {
     const settings = await getSettings();
+    const notificationLog = await getNotificationLog();
     const alarms = await chrome.alarms.getAll();
     await Promise.all(
       alarms
@@ -42,8 +70,10 @@ export async function scheduleAllAlarms(subscriptions) {
         const daysUntil = getDaysUntil(item.nextBillingDate);
         const fireInDays = daysUntil - Number(daysAhead);
         if (fireInDays < 0) continue;
+        if (notificationLog[getReminderLogKey(item, daysAhead)]) continue;
 
-        const when = Date.now() + fireInDays * 24 * 60 * 60 * 1000;
+        const delay = fireInDays === 0 ? 1000 : fireInDays * MS_PER_DAY;
+        const when = Date.now() + delay;
         await chrome.alarms.create(getAlarmName(item.id, daysAhead), { when });
       }
     }
@@ -64,10 +94,16 @@ export async function handleAlarm(alarmName) {
     const item = subscriptions.find((subscription) => subscription.id === parsed.id);
     if (!item || item.status !== "active") return;
 
+    const notificationLog = await getNotificationLog();
+    const logKey = getReminderLogKey(item, parsed.daysAhead);
+    if (notificationLog[logKey]) return;
+
     const message = parsed.daysAhead === 0
       ? `${item.name} 今天扣款。`
       : `${item.name} 將在 ${parsed.daysAhead} 天後扣款，下次扣款日為 ${formatDate(item.nextBillingDate)}。`;
     await showNotification("SubTrack 扣款提醒", message);
+    notificationLog[logKey] = new Date().toISOString();
+    await saveNotificationLog(notificationLog);
   } catch (error) {
     console.error("Unable to handle alarm", error);
   }
