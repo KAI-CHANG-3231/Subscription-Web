@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SubTrack</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="popup-shell">
+      <header class="summary">
+        <div>
+          <p class="eyebrow">本月總支出</p>
+          <h1 id="monthly-total">--</h1>
+        </div>
+        <button id="open-options" class="icon-button" type="button" title="開啟設定" aria-label="開啟設定">⚙</button>
+      </header>
+
+      <section aria-label="訂閱列表">
+        <div class="section-title">
+          <h2>即將扣款</h2>
+          <span id="subscription-count">0 項</span>
+        </div>
+        <div id="subscription-list" class="subscription-list"></div>
+        <p id="empty-state" class="empty-state" hidden>尚未新增訂閱。</p>
+      </section>
+
+      <footer>
+        <button id="add-subscription" class="primary-button" type="button">＋ 新增訂閱</button>
+      </footer>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

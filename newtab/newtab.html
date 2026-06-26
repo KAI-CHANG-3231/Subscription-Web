@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SubTrack</title>
+    <link rel="stylesheet" href="newtab.css">
+  </head>
+  <body>
+    <main id="app" class="newtab-shell">
+      <header class="page-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">S</span>
+          <div>
+            <h1>SubTrack</h1>
+            <p id="today-label"></p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <div class="monthly-card" aria-label="總月費概覽">
+            <span>總月費</span>
+            <strong id="monthly-total">--</strong>
+          </div>
+          <button id="open-options" class="icon-button" type="button" title="設定" aria-label="設定">⚙</button>
+        </div>
+      </header>
+
+      <nav id="category-tabs" class="category-tabs" aria-label="分類篩選"></nav>
+
+      <section>
+        <div id="subscription-grid" class="subscription-grid"></div>
+        <p id="empty-state" class="empty-state" hidden>沒有符合條件的訂閱。</p>
+      </section>
+
+      <button id="add-subscription" class="fab" type="button" title="新增訂閱" aria-label="新增訂閱">＋</button>
+    </main>
+    <script type="module" src="newtab.js"></script>
+  </body>
+</html>

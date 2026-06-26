@@ -1,0 +1,195 @@
+import {
+  DEFAULT_SETTINGS,
+  getSettings,
+  getSubscriptions,
+  saveSettings,
+  saveSubscriptions
+} from "../utils/storage.js";
+import { todayString } from "../utils/date.js";
+import { scheduleAllAlarms } from "../utils/notification.js";
+
+const settingsForm = document.querySelector("#settings-form");
+const defaultCurrencyInput = document.querySelector("#default-currency");
+const rateUsdInput = document.querySelector("#rate-usd");
+const rateJpyInput = document.querySelector("#rate-jpy");
+const rateEurInput = document.querySelector("#rate-eur");
+const enableNotificationsInput = document.querySelector("#enable-notifications");
+const enableNewTabInput = document.querySelector("#enable-newtab");
+const messageEl = document.querySelector("#settings-message");
+const exportButton = document.querySelector("#export-data");
+const importFileInput = document.querySelector("#import-file");
+const importButton = document.querySelector("#import-data");
+const clearButton = document.querySelector("#clear-data");
+
+function setMessage(message, isSuccess = false) {
+  messageEl.textContent = message;
+  messageEl.classList.toggle("success", isSuccess);
+}
+
+function getImportMode() {
+  return document.querySelector('input[name="importMode"]:checked')?.value || "merge";
+}
+
+function normalizeSubscription(item) {
+  const fee = Number(item.fee);
+  const cycle = ["monthly", "yearly", "custom"].includes(item.cycle) ? item.cycle : "monthly";
+  return {
+    id: typeof item.id === "string" && item.id ? item.id : crypto.randomUUID(),
+    name: String(item.name || "").trim(),
+    category: ["streaming", "music", "tools", "gaming", "ai", "other"].includes(item.category)
+      ? item.category
+      : "other",
+    fee: Number.isFinite(fee) && fee > 0 ? fee : 1,
+    currency: ["TWD", "USD", "JPY", "EUR"].includes(item.currency) ? item.currency : "TWD",
+    cycle,
+    cycleDays: cycle === "custom" ? Math.max(1, Number(item.cycleDays) || 30) : null,
+    nextBillingDate: /^\d{4}-\d{2}-\d{2}$/.test(item.nextBillingDate || "")
+      ? item.nextBillingDate
+      : todayString(),
+    reminderDays: Array.isArray(item.reminderDays) && item.reminderDays.length
+      ? item.reminderDays.map(Number).filter((day) => day >= 0)
+      : [7, 1],
+    color: /^#[0-9a-f]{6}$/i.test(item.color || "") ? item.color : "#ffffff",
+    notes: String(item.notes || ""),
+    createdAt: /^\d{4}-\d{2}-\d{2}$/.test(item.createdAt || "") ? item.createdAt : todayString(),
+    isActive: item.isActive !== false
+  };
+}
+
+function validateSettings(settings) {
+  const rates = settings.exchangeRates;
+  if (!["TWD", "USD", "JPY", "EUR"].includes(settings.defaultCurrency)) {
+    return "請選擇有效的預設幣別。";
+  }
+  if ([rates.USD, rates.JPY, rates.EUR].some((rate) => !Number.isFinite(rate) || rate <= 0)) {
+    return "匯率必須大於 0。";
+  }
+  return "";
+}
+
+function readSettingsFromForm() {
+  return {
+    defaultCurrency: defaultCurrencyInput.value,
+    exchangeRates: {
+      USD: Number(rateUsdInput.value),
+      JPY: Number(rateJpyInput.value),
+      EUR: Number(rateEurInput.value)
+    },
+    enableNotifications: enableNotificationsInput.checked,
+    enableNewTab: enableNewTabInput.checked
+  };
+}
+
+function fillSettings(settings) {
+  defaultCurrencyInput.value = settings.defaultCurrency;
+  rateUsdInput.value = String(settings.exchangeRates.USD);
+  rateJpyInput.value = String(settings.exchangeRates.JPY);
+  rateEurInput.value = String(settings.exchangeRates.EUR);
+  enableNotificationsInput.checked = settings.enableNotifications;
+  enableNewTabInput.checked = settings.enableNewTab;
+}
+
+async function handleSettingsSubmit(event) {
+  event.preventDefault();
+  setMessage("");
+
+  const settings = readSettingsFromForm();
+  const validationMessage = validateSettings(settings);
+  if (validationMessage) {
+    setMessage(validationMessage);
+    return;
+  }
+
+  try {
+    await saveSettings(settings);
+    await scheduleAllAlarms(await getSubscriptions());
+    setMessage("設定已儲存。", true);
+  } catch (error) {
+    console.error("Unable to save settings", error);
+    setMessage("儲存設定失敗。");
+  }
+}
+
+async function exportData() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    settings: await getSettings(),
+    subscriptions: await getSubscriptions()
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "subscriptions.json";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importData() {
+  const file = importFileInput.files?.[0];
+  if (!file) {
+    setMessage("請先選擇 JSON 檔案。");
+    return;
+  }
+
+  try {
+    const content = await file.text();
+    const parsed = JSON.parse(content);
+    const importedSubscriptions = Array.isArray(parsed) ? parsed : parsed.subscriptions;
+    if (!Array.isArray(importedSubscriptions)) {
+      setMessage("JSON 內容必須包含 subscriptions 陣列。");
+      return;
+    }
+
+    const normalized = importedSubscriptions
+      .map(normalizeSubscription)
+      .filter((item) => item.name);
+    const current = await getSubscriptions();
+    const nextSubscriptions = getImportMode() === "replace"
+      ? normalized
+      : [...current.filter((item) => !normalized.some((next) => next.id === item.id)), ...normalized];
+
+    await saveSubscriptions(nextSubscriptions);
+
+    if (!Array.isArray(parsed) && parsed.settings) {
+      await saveSettings({ ...(await getSettings()), ...parsed.settings });
+      fillSettings(await getSettings());
+    }
+
+    await scheduleAllAlarms(nextSubscriptions);
+    setMessage(`已匯入 ${normalized.length} 筆資料。`, true);
+  } catch (error) {
+    console.error("Unable to import data", error);
+    setMessage("匯入失敗，請確認 JSON 格式。");
+  }
+}
+
+async function clearData() {
+  const confirmed = confirm("確定清除所有 SubTrack 資料？此操作無法復原。");
+  if (!confirmed) return;
+
+  try {
+    await saveSubscriptions([]);
+    await saveSettings(DEFAULT_SETTINGS);
+    await scheduleAllAlarms([]);
+    fillSettings(DEFAULT_SETTINGS);
+    setMessage("所有資料已清除。", true);
+  } catch (error) {
+    console.error("Unable to clear data", error);
+    setMessage("清除資料失敗。");
+  }
+}
+
+async function initialize() {
+  fillSettings(await getSettings());
+}
+
+settingsForm.addEventListener("submit", handleSettingsSubmit);
+exportButton.addEventListener("click", exportData);
+importButton.addEventListener("click", importData);
+clearButton.addEventListener("click", clearData);
+
+initialize().catch((error) => {
+  console.error("Unable to initialize options", error);
+  setMessage("載入設定失敗。");
+});

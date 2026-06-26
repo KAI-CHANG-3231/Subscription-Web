@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SubTrack 設定</title>
+    <link rel="stylesheet" href="options.css">
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">SubTrack</p>
+          <h1>設定</h1>
+        </div>
+      </header>
+
+      <form id="settings-form" class="panel" novalidate>
+        <section class="section">
+          <h2>顯示與匯率</h2>
+          <label>
+            <span>預設顯示幣別</span>
+            <select id="default-currency">
+              <option value="TWD">TWD</option>
+              <option value="USD">USD</option>
+              <option value="JPY">JPY</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </label>
+
+          <div class="rate-grid">
+            <label>
+              <span>1 USD = ? TWD</span>
+              <input id="rate-usd" type="number" min="0.0001" step="0.0001">
+            </label>
+            <label>
+              <span>1 JPY = ? TWD</span>
+              <input id="rate-jpy" type="number" min="0.0001" step="0.0001">
+            </label>
+            <label>
+              <span>1 EUR = ? TWD</span>
+              <input id="rate-eur" type="number" min="0.0001" step="0.0001">
+            </label>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>功能開關</h2>
+          <label class="toggle-row">
+            <span>推播提醒</span>
+            <input id="enable-notifications" type="checkbox">
+          </label>
+          <label class="toggle-row">
+            <span>使用 SubTrack 新分頁</span>
+            <input id="enable-newtab" type="checkbox">
+          </label>
+        </section>
+
+        <p id="settings-message" class="message" role="status"></p>
+        <button class="primary-button" type="submit">儲存設定</button>
+      </form>
+
+      <section class="panel section">
+        <h2>資料備份</h2>
+        <div class="action-row">
+          <button id="export-data" class="secondary-button" type="button">匯出資料</button>
+        </div>
+        <div class="import-box">
+          <input id="import-file" type="file" accept="application/json,.json">
+          <div class="radio-row" role="radiogroup" aria-label="匯入模式">
+            <label><input type="radio" name="importMode" value="merge" checked> 合併</label>
+            <label><input type="radio" name="importMode" value="replace"> 覆蓋</label>
+          </div>
+          <button id="import-data" class="secondary-button" type="button">匯入資料</button>
+        </div>
+      </section>
+
+      <section class="panel section danger-zone">
+        <h2>危險區</h2>
+        <button id="clear-data" class="danger-button" type="button">清除所有資料</button>
+      </section>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
