@@ -13,9 +13,6 @@
     "type": "module"
   },
   "options_page": "options/options.html",
-  "chrome_url_overrides": {
-    "newtab": "newtab/newtab.html"
-  },
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",

@@ -8,6 +8,7 @@ const countEl = document.querySelector("#subscription-count");
 const listEl = document.querySelector("#subscription-list");
 const emptyStateEl = document.querySelector("#empty-state");
 const addButton = document.querySelector("#add-subscription");
+const dashboardButton = document.querySelector("#open-dashboard");
 const optionsButton = document.querySelector("#open-options");
 
 function openExtensionPage(path) {
@@ -108,6 +109,7 @@ async function render() {
 }
 
 addButton.addEventListener("click", () => openExtensionPage("pages/add-edit.html"));
+dashboardButton.addEventListener("click", () => openExtensionPage("newtab/newtab.html"));
 optionsButton.addEventListener("click", () => openExtensionPage("options/options.html"));
 
 render().catch((error) => {

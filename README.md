@@ -8,7 +8,7 @@ SubTrack 是一個純原生 JavaScript 開發的 Chrome Extension，用來手動
 
 - Manifest V3 Chrome 擴充功能
 - Popup 快速查看本月總支出與即將扣款項目
-- 新分頁 Dashboard，支援分類篩選與系統 Dark Mode
+- 獨立 Dashboard 總覽頁，支援分類篩選與系統 Dark Mode
 - 新增、編輯、刪除訂閱
 - 自訂月繳、年繳、固定天數週期
 - 支援 TWD、USD、JPY、EUR，匯率可手動設定
@@ -27,7 +27,7 @@ SubTrack 是一個純原生 JavaScript 開發的 Chrome Extension，用來手動
 C:\Users\momoi\OneDrive\Desktop\codex專案\Subscription-Web
 ```
 
-載入後可從工具列開啟 popup，也可直接打開擴充功能的設定頁調整匯率與功能開關。
+載入後可從工具列開啟 popup。SubTrack 不會覆蓋 Chrome 原本的新分頁；需要完整總覽時，請在 popup 右上角點「開啟總覽」。
 
 ## 專案結構
 
@@ -97,7 +97,7 @@ C:\Users\momoi\OneDrive\Desktop\codex專案\Subscription-Web
     "EUR": 35
   },
   "enableNotifications": true,
-  "enableNewTab": true
+  "enableNewTab": false
 }
 ```
 
@@ -109,6 +109,7 @@ C:\Users\momoi\OneDrive\Desktop\codex專案\Subscription-Web
 - 日期計算使用原生 `Date`
 - UI 不使用 `innerHTML` 或 `eval()`
 - 通知排程由 `chrome.alarms` 建立，新增、編輯、刪除或調整設定後會重新排程
+- 為保留 Chrome 原生主頁，本專案未啟用 `chrome_url_overrides.newtab`
 
 ## 驗證
 

@@ -14,7 +14,6 @@ const rateUsdInput = document.querySelector("#rate-usd");
 const rateJpyInput = document.querySelector("#rate-jpy");
 const rateEurInput = document.querySelector("#rate-eur");
 const enableNotificationsInput = document.querySelector("#enable-notifications");
-const enableNewTabInput = document.querySelector("#enable-newtab");
 const messageEl = document.querySelector("#settings-message");
 const exportButton = document.querySelector("#export-data");
 const importFileInput = document.querySelector("#import-file");
@@ -76,7 +75,7 @@ function readSettingsFromForm() {
       EUR: Number(rateEurInput.value)
     },
     enableNotifications: enableNotificationsInput.checked,
-    enableNewTab: enableNewTabInput.checked
+    enableNewTab: false
   };
 }
 
@@ -86,7 +85,6 @@ function fillSettings(settings) {
   rateJpyInput.value = String(settings.exchangeRates.JPY);
   rateEurInput.value = String(settings.exchangeRates.EUR);
   enableNotificationsInput.checked = settings.enableNotifications;
-  enableNewTabInput.checked = settings.enableNewTab;
 }
 
 async function handleSettingsSubmit(event) {

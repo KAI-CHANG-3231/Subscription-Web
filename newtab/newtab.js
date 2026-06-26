@@ -139,22 +139,8 @@ function renderGrid() {
   emptyStateEl.hidden = activeSubscriptions.length > 0;
 }
 
-function renderBlankPage() {
-  appEl.className = "newtab-shell blank";
-  appEl.replaceChildren();
-  const message = document.createElement("p");
-  message.className = "blank-message";
-  message.textContent = "SubTrack 新分頁已停用，可在擴充功能設定中重新開啟。";
-  appEl.append(message);
-}
-
 async function render() {
   cachedSettings = await getSettings();
-  if (!cachedSettings.enableNewTab) {
-    renderBlankPage();
-    return;
-  }
-
   cachedSubscriptions = await getSubscriptions();
   const activeSubscriptions = cachedSubscriptions.filter((item) => item.isActive !== false);
   const monthlyTotal = activeSubscriptions.reduce((sum, item) => {
