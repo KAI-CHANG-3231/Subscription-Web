@@ -18,7 +18,7 @@ SubTrack 是一個 Manifest V3 Chrome Extension，用來手動記錄個人數位
 
 ## 安裝
 
-1. 開啟 Chrome，進入 `chrome://extensions`
+1. 解壓縮後 開啟 Chrome，進入 `chrome://extensions`
 2. 開啟右上角「開發人員模式」
 3. 點選「載入未封裝項目」
 4. 選擇本專案根目錄，也就是包含 `manifest.json` 的資料夾：
