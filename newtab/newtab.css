@@ -54,7 +54,7 @@ h1 {
 
 .header-actions {
   display: grid;
-  grid-template-columns: minmax(230px, 1.25fr) minmax(190px, 0.9fr) minmax(190px, 0.9fr) auto;
+  grid-template-columns: minmax(260px, 1.35fr) minmax(210px, 0.9fr) auto;
   gap: 12px;
   align-items: stretch;
 }
@@ -129,30 +129,6 @@ h1 {
   font-style: normal;
 }
 
-.alert-metrics {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.alert-metrics div {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.alert-metrics strong {
-  color: var(--brand-primary);
-  font-size: 24px;
-  line-height: 1;
-}
-
-.alert-metrics small {
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 700;
-}
-
 .icon-button {
   display: grid;
   place-items: center;
@@ -176,6 +152,11 @@ h1 {
 .fab svg {
   width: 22px;
   height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
 }
 
 .filters-row {
@@ -519,21 +500,22 @@ h1 {
   position: fixed;
   right: 28px;
   bottom: 28px;
+  z-index: 20;
   display: grid;
   place-items: center;
-  width: 58px;
-  height: 58px;
+  width: 60px;
+  height: 60px;
   border: 0;
   border-radius: 50%;
   background: var(--brand-primary);
   color: #ffffff;
-  box-shadow: var(--shadow-hover);
+  box-shadow: 0 10px 30px rgba(92, 78, 250, 0.28);
 }
 
 .fab:hover,
 .fab:focus-visible {
   background: var(--brand-secondary);
-  box-shadow: var(--shadow-hover);
+  box-shadow: 0 14px 34px rgba(92, 78, 250, 0.34);
   transform: scale(1.08);
 }
 

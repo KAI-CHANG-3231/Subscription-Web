@@ -21,8 +21,6 @@ const monthlyTotalEl = document.querySelector("#monthly-total");
 const monthlyChangeEl = document.querySelector("#monthly-change");
 const subscriptionCountEl = document.querySelector("#subscription-count");
 const nearestBillingListEl = document.querySelector("#nearest-billing-list");
-const dueSoonCountEl = document.querySelector("#due-soon-count");
-const expiredCountEl = document.querySelector("#expired-count");
 const categoryTabsEl = document.querySelector("#category-tabs");
 const tabIndicatorEl = document.querySelector("#tab-indicator");
 const statusFilterEl = document.querySelector("#status-filter");
@@ -379,11 +377,6 @@ async function render() {
 
   const activeSubscriptions = cachedSubscriptions.filter((item) => item.status === "active");
   const recurringActive = activeSubscriptions.filter((item) => item.cycle !== "once");
-  const dueSoon = activeSubscriptions.filter((item) => {
-    const days = getDaysUntil(item.nextBillingDate);
-    return days >= 0 && days <= 7;
-  });
-  const expired = cachedSubscriptions.filter((item) => item.status === "expired");
   const monthlySummary = summarizeMonthlyByCurrency(recurringActive, cachedSettings, getSummaryFee);
 
   todayLabelEl.textContent = new Intl.DateTimeFormat("zh-TW", {
@@ -395,8 +388,6 @@ async function render() {
   monthlyTotalEl.textContent = formatCurrency(monthlySummary.total, monthlySummary.displayCurrency);
   monthlyChangeEl.textContent = formatCurrencyFormula(monthlySummary);
   subscriptionCountEl.textContent = `${activeSubscriptions.length} 項`;
-  dueSoonCountEl.textContent = String(dueSoon.length);
-  expiredCountEl.textContent = String(expired.length);
   renderNearest(activeSubscriptions);
   renderTabs();
   renderGrid();
