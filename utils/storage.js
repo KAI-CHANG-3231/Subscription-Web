@@ -1,6 +1,8 @@
 import { todayString } from "./date.js";
 import { DEFAULT_CATEGORIES } from "./presets.js";
 
+const OTHER_CATEGORY = "其他";
+
 export const DEFAULT_SETTINGS = {
   defaultCurrency: "TWD",
   exchangeRates: {
@@ -23,10 +25,18 @@ const STORAGE_KEYS = {
 const CATEGORY_MAP = {
   streaming: "影音串流",
   music: "音樂",
-  tools: "生產工具",
+  tools: "生產力工具",
   gaming: "遊戲",
-  ai: "AI服務",
-  other: "其他"
+  ai: "AI 工具",
+  storage: "雲端儲存",
+  other: OTHER_CATEGORY,
+  "敶梢銝脫?": "影音串流",
+  "?單?": "音樂",
+  "?撌亙": "生產力工具",
+  "?": "遊戲",
+  "AI??": "AI 工具",
+  "?脩垢?脣?": "雲端儲存",
+  "?嗡?": OTHER_CATEGORY
 };
 
 const VALID_STATUS = new Set(["active", "paused", "expired"]);
@@ -39,6 +49,11 @@ const VALID_PAYMENT_METHODS = new Set([
   "other"
 ]);
 
+function normalizeCategoryLabel(value) {
+  const label = String(value || "").trim();
+  return CATEGORY_MAP[label] || label || OTHER_CATEGORY;
+}
+
 function mergeSettings(settings = {}) {
   const defaultCurrency = ["TWD", "USD", "JPY", "EUR"].includes(settings.defaultCurrency)
     ? settings.defaultCurrency
@@ -47,6 +62,7 @@ function mergeSettings(settings = {}) {
     ? settings.summaryAmountMode
     : DEFAULT_SETTINGS.summaryAmountMode;
   const categories = normalizeCategories(settings.categories);
+
   return {
     ...DEFAULT_SETTINGS,
     ...settings,
@@ -62,12 +78,13 @@ function mergeSettings(settings = {}) {
 }
 
 export function normalizeCategories(categories) {
-  const source = Array.isArray(categories) && categories.length ? categories : DEFAULT_CATEGORIES;
+  const hasCustomSource = Array.isArray(categories) && categories.length;
+  const source = hasCustomSource ? categories : DEFAULT_CATEGORIES;
   const seen = new Set();
   const normalized = source
     .map((category) => {
       const label = typeof category === "string" ? category : category?.label || category?.value;
-      const value = String(label || "").trim();
+      const value = normalizeCategoryLabel(label);
       return value ? { value, label: value } : null;
     })
     .filter(Boolean)
@@ -77,7 +94,7 @@ export function normalizeCategories(categories) {
       return true;
     });
 
-  if (!seen.has("其他")) normalized.push({ value: "其他", label: "其他" });
+  if (!seen.has(OTHER_CATEGORY)) normalized.push({ value: OTHER_CATEGORY, label: OTHER_CATEGORY });
   return normalized;
 }
 
@@ -105,7 +122,7 @@ export function normalizeSubscription(item = {}) {
     : item.isActive === false
       ? "paused"
       : "active";
-  const category = CATEGORY_MAP[item.category] || item.category || "其他";
+  const category = normalizeCategoryLabel(item.category);
   const cycle = ["monthly", "yearly", "custom", "once"].includes(item.cycle)
     ? item.cycle
     : "monthly";
@@ -127,7 +144,7 @@ export function normalizeSubscription(item = {}) {
   return {
     id: typeof item.id === "string" && item.id ? item.id : crypto.randomUUID(),
     name: String(item.name || "").trim(),
-    category: String(category).trim() || "其他",
+    category,
     fee: Math.max(0, Number(item.fee) || 0),
     currency: ["TWD", "USD", "JPY", "EUR"].includes(item.currency) ? item.currency : "TWD",
     cycle,

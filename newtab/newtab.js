@@ -21,6 +21,8 @@ const monthlyTotalEl = document.querySelector("#monthly-total");
 const monthlyChangeEl = document.querySelector("#monthly-change");
 const subscriptionCountEl = document.querySelector("#subscription-count");
 const nearestBillingListEl = document.querySelector("#nearest-billing-list");
+const dueSoonCountEl = document.querySelector("#due-soon-count");
+const expiredCountEl = document.querySelector("#expired-count");
 const categoryTabsEl = document.querySelector("#category-tabs");
 const tabIndicatorEl = document.querySelector("#tab-indicator");
 const statusFilterEl = document.querySelector("#status-filter");
@@ -42,7 +44,7 @@ function openExtensionPage(path) {
 function getCountdownLabel(days) {
   if (days < 0) return "已逾期";
   if (days === 0) return "今天扣款";
-  return `${days} 天後扣款`;
+  return `${days} 天後`;
 }
 
 function getCountdownClass(days) {
@@ -61,7 +63,7 @@ function getCycleLabel(item) {
 }
 
 function getStatusLabel(status) {
-  if (status === "paused") return "暫停中";
+  if (status === "paused") return "已暫停";
   if (status === "expired") return "已到期";
   return "訂閱中";
 }
@@ -82,19 +84,35 @@ function getSharedLabel(item) {
   if (!item.isShared) return "";
   const names = Array.isArray(item.sharedWith) ? item.sharedWith : [];
   if (names.length) return `與 ${names.join("、")} 共用`;
-  return `${item.splitCount || 2} 人共同訂閱`;
+  return `${item.splitCount || 2} 人分攤`;
 }
 
 function getSummaryFee(item, settings) {
   return settings.summaryAmountMode === "gross" ? item.fee : getPersonalFee(item);
 }
 
+function getEmptyLabel() {
+  if (activeCategory !== "all") return "這個分類目前沒有符合狀態的訂閱。";
+  if (activeStatus === "paused") return "目前沒有暫停中的訂閱。";
+  if (activeStatus === "expired") return "目前沒有已到期的訂閱。";
+  if (activeStatus === "all") return "目前還沒有訂閱資料。";
+  return "目前沒有訂閱中項目，新增第一筆訂閱後就會開始追蹤。";
+}
+
+function closeOpenMenus() {
+  gridEl.querySelectorAll(".subscription-card.menu-open").forEach((card) => {
+    card.classList.remove("menu-open");
+    card.querySelector(".menu-button")?.setAttribute("aria-expanded", "false");
+  });
+}
+
 function createMenuButton() {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "menu-button";
-  button.setAttribute("aria-label", "更多操作");
-  button.title = "更多操作";
+  button.setAttribute("aria-label", "開啟訂閱操作");
+  button.setAttribute("aria-expanded", "false");
+  button.title = "訂閱操作";
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 24 24");
@@ -103,7 +121,7 @@ function createMenuButton() {
     const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     circle.setAttribute("cx", "12");
     circle.setAttribute("cy", String(cy));
-    circle.setAttribute("r", "1");
+    circle.setAttribute("r", "1.3");
     svg.append(circle);
   });
 
@@ -116,7 +134,7 @@ function createCountdownChip(item) {
   const chip = document.createElement("span");
   chip.className = `countdown-chip ${getCountdownClass(days)}`.trim();
 
-  if (days > 0 && days <= 7) {
+  if (item.status === "active" && days > 0 && days <= 7) {
     const dot = document.createElement("span");
     dot.className = "pulse-dot";
     chip.append(dot);
@@ -165,23 +183,23 @@ function updateTabIndicator() {
 }
 
 async function pauseSubscription(item) {
-  await updateStatus(item.id, "paused", "使用者手動暫停");
+  await updateStatus(item.id, "paused", "使用者暫停訂閱");
   cachedSubscriptions = await getSubscriptions();
   await scheduleAllAlarms(cachedSubscriptions);
   await render();
 }
 
 async function stopSubscription(item) {
-  const confirmed = confirm(`停止 ${item.name}？此項目會移到已到期。`);
+  const confirmed = confirm(`停止「${item.name}」？\n這會把它移到已到期清單，之後仍可重新啟用。`);
   if (!confirmed) return;
-  await updateStatus(item.id, "expired", "使用者手動停止");
+  await updateStatus(item.id, "expired", "使用者停止訂閱");
   cachedSubscriptions = await getSubscriptions();
   await scheduleAllAlarms(cachedSubscriptions);
   await render();
 }
 
 async function permanentlyDeleteSubscription(item) {
-  const confirmed = confirm(`永久刪除 ${item.name}？此操作無法復原。`);
+  const confirmed = confirm(`永久刪除「${item.name}」？\n刪除後無法復原。`);
   if (!confirmed) return;
   await deleteSubscription(item.id);
   cachedSubscriptions = await getSubscriptions();
@@ -205,7 +223,10 @@ function appendAction(actions, label, className, handler) {
   button.type = "button";
   button.className = className;
   button.textContent = label;
-  button.addEventListener("click", handler);
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    handler();
+  });
   actions.append(button);
 }
 
@@ -223,6 +244,7 @@ function createCard(item, index) {
 
   const spendBar = document.createElement("span");
   spendBar.className = "spend-bar";
+  spendBar.setAttribute("aria-hidden", "true");
 
   const content = document.createElement("div");
   content.className = "card-content";
@@ -277,7 +299,10 @@ function createCard(item, index) {
   const menuButton = createMenuButton();
   menuButton.addEventListener("click", (event) => {
     event.stopPropagation();
-    card.classList.toggle("menu-open");
+    const willOpen = !card.classList.contains("menu-open");
+    closeOpenMenus();
+    card.classList.toggle("menu-open", willOpen);
+    menuButton.setAttribute("aria-expanded", String(willOpen));
   });
   menu.append(menuButton);
 
@@ -316,7 +341,9 @@ function getVisibleSubscriptions() {
 
 function renderGrid() {
   const visibleSubscriptions = getVisibleSubscriptions();
+  closeOpenMenus();
   gridEl.replaceChildren(...visibleSubscriptions.map(createCard));
+  emptyStateEl.textContent = getEmptyLabel();
   emptyStateEl.hidden = visibleSubscriptions.length > 0;
 }
 
@@ -328,7 +355,7 @@ function renderNearest(activeSubscriptions) {
   nearestBillingListEl.replaceChildren();
   if (!nearest.length) {
     const empty = document.createElement("em");
-    empty.textContent = "最近扣款 --";
+    empty.textContent = "尚無即將扣款";
     nearestBillingListEl.append(empty);
     return;
   }
@@ -349,8 +376,14 @@ async function render() {
   cachedSettings = await getSettings();
   tabs = [{ value: "all", label: "全部" }, ...cachedSettings.categories];
   cachedSubscriptions = await getSubscriptions();
+
   const activeSubscriptions = cachedSubscriptions.filter((item) => item.status === "active");
   const recurringActive = activeSubscriptions.filter((item) => item.cycle !== "once");
+  const dueSoon = activeSubscriptions.filter((item) => {
+    const days = getDaysUntil(item.nextBillingDate);
+    return days >= 0 && days <= 7;
+  });
+  const expired = cachedSubscriptions.filter((item) => item.status === "expired");
   const monthlySummary = summarizeMonthlyByCurrency(recurringActive, cachedSettings, getSummaryFee);
 
   todayLabelEl.textContent = new Intl.DateTimeFormat("zh-TW", {
@@ -362,8 +395,9 @@ async function render() {
   monthlyTotalEl.textContent = formatCurrency(monthlySummary.total, monthlySummary.displayCurrency);
   monthlyChangeEl.textContent = formatCurrencyFormula(monthlySummary);
   subscriptionCountEl.textContent = `${activeSubscriptions.length} 項`;
+  dueSoonCountEl.textContent = String(dueSoon.length);
+  expiredCountEl.textContent = String(expired.length);
   renderNearest(activeSubscriptions);
-
   renderTabs();
   renderGrid();
 }
@@ -372,9 +406,21 @@ statusFilterEl.addEventListener("change", () => {
   activeStatus = statusFilterEl.value;
   renderGrid();
 });
+
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".subscription-card")) closeOpenMenus();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeOpenMenus();
+});
+
+window.addEventListener("resize", updateTabIndicator);
 addButton.addEventListener("click", () => openExtensionPage("pages/add-edit.html"));
 optionsButton.addEventListener("click", () => openExtensionPage("options/options.html"));
 
 render().catch((error) => {
   console.error("Unable to render dashboard", error);
+  emptyStateEl.hidden = false;
+  emptyStateEl.textContent = "載入訂閱資料時發生問題，請稍後再試。";
 });

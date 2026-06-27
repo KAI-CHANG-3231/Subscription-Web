@@ -7,29 +7,45 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="newtab.css">
   </head>
   <body>
     <main id="app" class="newtab-shell">
-      <header class="page-header">
+      <header class="page-header surface-panel">
         <div class="brand">
           <span class="brand-mark" aria-hidden="true">S</span>
           <div>
-            <h1>SubTrack</h1>
-            <p id="today-label"></p>
+            <p class="eyebrow">SubTrack</p>
+            <h1>訂閱總覽</h1>
+            <p id="today-label" class="today-label"></p>
           </div>
         </div>
+
         <div class="header-actions">
-          <div class="monthly-card" aria-label="本月有效訂閱總支出">
+          <section class="summary-card monthly-card" aria-label="本月有效訂閱總支出">
             <span>本月有效總支出</span>
             <strong id="monthly-total">--</strong>
-            <em id="monthly-change">只計算訂閱中項目</em>
-          </div>
-          <div class="insight-card" aria-label="訂閱摘要">
-            <span>訂閱服務數量</span>
-            <strong id="subscription-count">0 項</strong>
+            <em id="monthly-change" class="mono">只計算訂閱中項目</em>
+          </section>
+          <section class="summary-card insight-card" aria-label="訂閱摘要">
+            <span>訂閱摘要</span>
+            <strong id="subscription-count" class="mono">0 項</strong>
             <div id="nearest-billing-list" class="nearest-list"></div>
-          </div>
+          </section>
+          <section class="summary-card alert-card" aria-label="提醒概覽">
+            <span>提醒概覽</span>
+            <div class="alert-metrics">
+              <div>
+                <strong id="due-soon-count" class="mono">0</strong>
+                <small>7 天內扣款</small>
+              </div>
+              <div>
+                <strong id="expired-count" class="mono">0</strong>
+                <small>已到期</small>
+              </div>
+            </div>
+          </section>
           <button id="open-options" class="icon-button" type="button" title="設定" aria-label="設定">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
@@ -56,7 +72,7 @@
 
       <section>
         <div id="subscription-grid" class="subscription-grid"></div>
-        <p id="empty-state" class="empty-state" hidden>沒有符合條件的訂閱。</p>
+        <p id="empty-state" class="empty-state" hidden>目前沒有符合條件的訂閱。</p>
       </section>
 
       <button id="add-subscription" class="fab" type="button" title="新增訂閱" aria-label="新增訂閱">

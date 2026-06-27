@@ -1,5 +1,5 @@
 import { addSubscription, getSettings, getSubscriptions, updateSubscription } from "../utils/storage.js";
-import { calcSplitPersonalFee, isZeroDecimalCurrency } from "../utils/currency.js";
+import { calcSplitPersonalFee, formatCurrency, isZeroDecimalCurrency } from "../utils/currency.js";
 import { getNextBillingDate, todayString } from "../utils/date.js";
 import { PRESETS } from "../utils/presets.js";
 import { scheduleAllAlarms } from "../utils/notification.js";
@@ -22,6 +22,7 @@ const sharedFields = document.querySelector("#shared-fields");
 const sharedWithInput = document.querySelector("#shared-with");
 const splitCountInput = document.querySelector("#split-count");
 const personalFeeInput = document.querySelector("#personal-fee");
+const splitPreview = document.querySelector("#split-preview");
 const cycleSelect = document.querySelector("#cycle");
 const cycleDaysRow = document.querySelector("#cycle-days-row");
 const cycleDaysInput = document.querySelector("#cycle-days");
@@ -46,7 +47,9 @@ function setMessage(message, isSuccess = false) {
 
 function closePage() {
   window.close();
-  setTimeout(() => setMessage("已完成，可關閉此分頁。", true), 150);
+  setTimeout(() => {
+    location.href = chrome.runtime.getURL("newtab/newtab.html");
+  }, 120);
 }
 
 function populateOptions() {
@@ -78,13 +81,8 @@ function toggleCycleFields(options = {}) {
   cycleDaysInput.required = isCustom;
   onceHint.hidden = !isOnce;
 
-  if (options.syncDate) {
-    syncMonthlyNextBillingDate();
-  }
-
-  if (!editingId) {
-    setReminderValues(isOnce ? [3, 1] : [7, 1]);
-  }
+  if (options.syncDate) syncMonthlyNextBillingDate();
+  if (!editingId) setReminderValues(isOnce ? [3, 1] : [7, 1]);
 }
 
 function getSharedNames() {
@@ -92,6 +90,22 @@ function getSharedNames() {
     .split(/[,\n，、]/)
     .map((name) => name.trim())
     .filter(Boolean);
+}
+
+function updateSplitPreview(isShared) {
+  if (!isShared) return;
+  const fee = Number(feeInput.value);
+  const splitCount = Number(splitCountInput.value);
+  if (!Number.isFinite(fee) || fee <= 0 || !Number.isFinite(splitCount) || splitCount < 2) {
+    splitPreview.textContent = "輸入金額與分攤人數後，系統會自動估算你的個人負擔。";
+    return;
+  }
+
+  const calculated = calcSplitPersonalFee(fee, splitCount, currencySelect.value);
+  const unevenHint = isZeroDecimalCurrency(currencySelect.value) && fee % splitCount !== 0
+    ? "因為這個幣別不使用小數，系統會把你的那份預設為多 1 元的分攤結果。"
+    : "你仍然可以手動調整個人負擔金額。";
+  splitPreview.textContent = `建議個人負擔：${formatCurrency(calculated, currencySelect.value)}。${unevenHint}`;
 }
 
 function syncSharedFields(options = {}) {
@@ -116,6 +130,7 @@ function syncSharedFields(options = {}) {
       personalFeeInput.value = String(calcSplitPersonalFee(fee, splitCount, currencySelect.value));
     }
   }
+  updateSplitPreview(isShared);
 }
 
 function applyPreset(preset) {
@@ -146,12 +161,14 @@ function getReminderValues() {
 
 function fillForm(item) {
   nameInput.value = item.name || "";
-  categorySelect.value = item.category || "其他";
-  feeInput.value = String(item.fee || "");
+  categorySelect.value = Array.from(categorySelect.options).some((option) => option.value === item.category)
+    ? item.category
+    : "其他";
+  feeInput.value = item.fee ? String(item.fee) : "";
   currencySelect.value = item.currency || "TWD";
   paymentMethodInput.value = item.paymentMethod || "credit_card";
   subscriptionScopeSelect.value = item.isShared ? "shared" : "personal";
-  sharedWithInput.value = Array.isArray(item.sharedWith) ? item.sharedWith.join("、") : "";
+  sharedWithInput.value = Array.isArray(item.sharedWith) ? item.sharedWith.join("\n") : "";
   splitCountInput.value = String(item.splitCount || Math.max(2, (item.sharedWith?.length || 0) + 1));
   personalFeeInput.value = item.personalFee
     ? String(isZeroDecimalCurrency(item.currency) ? Math.ceil(Number(item.personalFee)) : item.personalFee)
@@ -178,25 +195,25 @@ function validateForm() {
   const splitCount = Number(splitCountInput.value);
   const personalFee = Number(personalFeeInput.value);
 
-  if (!name) return "服務名稱不得空白。";
-  if (!Number.isFinite(fee) || fee <= 0) return "費用金額必須大於 0。";
+  if (!name) return "請輸入服務名稱。";
+  if (!Number.isFinite(fee) || fee <= 0) return "訂閱金額必須大於 0。";
   if (!date) return "請選擇下次扣款日期。";
   if (!startDate) return "請選擇訂閱開始日。";
-  if (startDate > date) return "訂閱開始日不可晚於下次扣款日期。";
-  if (!editingId && date < todayString()) return "新增訂閱的扣款日期不得為過去日期。";
+  if (startDate > date) return "訂閱開始日不可以晚於下次扣款日期。";
+  if (!editingId && date < todayString()) return "新增訂閱的下次扣款日期不可以早於今天。";
   if (cycleSelect.value === "custom" && (!Number.isInteger(cycleDays) || cycleDays <= 0)) {
     return "自訂週期天數必須是大於 0 的整數。";
   }
   if (subscriptionScopeSelect.value === "shared") {
-    if (!Number.isInteger(splitCount) || splitCount < 2) return "共同訂閱的分攤人數至少要 2 人。";
+    if (!Number.isInteger(splitCount) || splitCount < 2) return "共同訂閱的分攤人數至少需要 2 人。";
     if (personalFeeInput.value && (!Number.isFinite(personalFee) || personalFee <= 0)) {
-      return "我個人負擔金額必須大於 0。";
+      return "個人負擔金額必須大於 0。";
     }
     if (personalFeeInput.value && isZeroDecimalCurrency(currencySelect.value) && !Number.isInteger(personalFee)) {
-      return "台幣與日幣的個人負擔金額不可有小數點。";
+      return "TWD 與 JPY 的個人負擔金額不可使用小數。";
     }
   }
-  if (getReminderValues().length === 0) return "請至少選擇一個提醒天數。";
+  if (getReminderValues().length === 0) return "請至少選擇一個扣款提醒時間。";
   return "";
 }
 
@@ -226,7 +243,7 @@ function buildSubscription() {
     startDate: startDateInput.value,
     status,
     statusHistory: editingItem && editingItem.status !== status
-      ? [...statusHistory, { status, changedAt: todayString(), note: "表單更新狀態" }]
+      ? [...statusHistory, { status, changedAt: todayString(), note: "手動變更狀態" }]
       : statusHistory,
     reminderDays: getReminderValues(),
     color: colorInput.value || "#5c4efa",
@@ -254,11 +271,11 @@ async function handleSubmit(event) {
       await addSubscription(item);
     }
     await scheduleAllAlarms(await getSubscriptions());
-    setMessage("已儲存。", true);
+    setMessage("已儲存訂閱。", true);
     setTimeout(closePage, 250);
   } catch (error) {
     console.error("Unable to save subscription", error);
-    setMessage("儲存失敗，請稍後再試。");
+    setMessage("儲存失敗，請確認資料後再試一次。");
   }
 }
 
@@ -266,7 +283,7 @@ async function initialize() {
   settings = await getSettings();
   populateOptions();
   subscriptions = await getSubscriptions();
-  nextBillingDateInput.min = todayString();
+  if (!editingId) nextBillingDateInput.min = todayString();
 
   if (editingId) {
     editingItem = subscriptions.find((item) => item.id === editingId);
@@ -309,5 +326,5 @@ cancelButton.addEventListener("click", closePage);
 
 initialize().catch((error) => {
   console.error("Unable to initialize form", error);
-  setMessage("載入資料失敗。");
+  setMessage("載入訂閱資料時發生問題，請稍後再試。");
 });

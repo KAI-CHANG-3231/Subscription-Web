@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="options.css">
   </head>
   <body>
@@ -25,9 +26,13 @@
         </button>
       </header>
 
-      <form id="settings-form" class="panel" novalidate>
+      <form id="settings-form" class="panel surface-panel" novalidate>
         <section class="section">
-          <h2>顯示與匯率</h2>
+          <div class="section-heading">
+            <p class="eyebrow">顯示與匯率</p>
+            <h2>主畫面的總支出怎麼顯示？</h2>
+          </div>
+
           <label>
             <span>主畫面總支出顯示幣別</span>
             <select id="default-currency">
@@ -37,12 +42,12 @@
               <option value="EUR">EUR</option>
             </select>
           </label>
-          <p class="hint">Popup 與 Dashboard 會先依原始幣別加總，再使用下方保存的匯率換算成這個主要幣別；沒有訂閱項目的幣種不會出現在公式中。</p>
+          <p class="hint">Popup 與 Dashboard 會先依原始幣別加總，再使用下方保存的匯率換算成這個主要幣別。</p>
 
           <fieldset>
             <legend>總金額顯示</legend>
             <div class="radio-row" role="radiogroup" aria-label="總金額顯示">
-              <label><input type="radio" name="summaryAmountMode" value="personal"> 顯示分攤後金額</label>
+              <label><input type="radio" name="summaryAmountMode" value="personal"> 顯示分攤後個人金額</label>
               <label><input type="radio" name="summaryAmountMode" value="gross"> 顯示未分攤總金額</label>
             </div>
           </fieldset>
@@ -61,19 +66,24 @@
               <input id="rate-eur" type="number" min="0.0001" step="0.0001">
             </label>
           </div>
+          <p id="rate-preview" class="preview-box mono">輸入匯率後會在這裡預覽換算結果。</p>
         </section>
 
         <section class="section">
-          <h2>功能開關</h2>
+          <div class="section-heading">
+            <p class="eyebrow">功能偏好</p>
+            <h2>通知與顯示</h2>
+          </div>
+
           <label class="toggle-row">
-            <span>推播提醒</span>
+            <span>啟用扣款通知</span>
             <input id="enable-notifications" type="checkbox">
           </label>
           <label class="toggle-row">
-            <span>新分頁覆蓋</span>
+            <span>覆蓋 Chrome 新分頁</span>
             <input id="enable-newtab" type="checkbox" disabled>
           </label>
-          <p class="hint">目前保留 Chrome 原生新分頁；完整總覽可從 popup 右上角開啟。</p>
+          <p class="hint">SubTrack 目前保留 Chrome 原生新分頁；Dashboard 可從 popup 或此設定頁開啟。</p>
           <label class="toggle-row">
             <span>Dashboard 顯示已到期訂閱</span>
             <input id="show-expired" type="checkbox">
@@ -84,20 +94,26 @@
         <button class="primary-button" type="submit">儲存設定</button>
       </form>
 
-      <section class="panel section">
-        <h2>分類管理</h2>
+      <section class="panel surface-panel section">
+        <div class="section-heading">
+          <p class="eyebrow">分類管理</p>
+          <h2>整理你的訂閱分類</h2>
+        </div>
         <div class="category-add-row">
           <label>
             <span>新增分類</span>
-            <input id="category-name" type="text" autocomplete="off" placeholder="例如：新聞、學習、健身">
+            <input id="category-name" type="text" autocomplete="off" placeholder="例如 學習、家庭、工作">
           </label>
           <button id="add-category" class="secondary-button" type="button">新增</button>
         </div>
-        <div id="category-list" class="category-list" aria-label="分類列表"></div>
+        <div id="category-list" class="category-list" aria-label="分類清單"></div>
       </section>
 
-      <section class="panel section">
-        <h2>資料備份</h2>
+      <section class="panel surface-panel section">
+        <div class="section-heading">
+          <p class="eyebrow">資料管理</p>
+          <h2>備份與還原</h2>
+        </div>
         <div class="action-row">
           <button id="export-data" class="secondary-button" type="button">匯出資料</button>
         </div>
@@ -105,14 +121,17 @@
           <input id="import-file" type="file" accept="application/json,.json">
           <div class="radio-row" role="radiogroup" aria-label="匯入模式">
             <label><input type="radio" name="importMode" value="merge" checked> 合併</label>
-            <label><input type="radio" name="importMode" value="replace"> 覆蓋</label>
+            <label><input type="radio" name="importMode" value="replace"> 取代</label>
           </div>
           <button id="import-data" class="secondary-button" type="button">匯入資料</button>
         </div>
       </section>
 
-      <section class="panel section danger-zone">
-        <h2>危險區</h2>
+      <section class="panel surface-panel section danger-zone">
+        <div class="section-heading">
+          <p class="eyebrow">危險操作</p>
+          <h2>清除 SubTrack 資料</h2>
+        </div>
         <button id="clear-data" class="danger-button" type="button">清除所有資料</button>
       </section>
     </main>

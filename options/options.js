@@ -7,6 +7,7 @@ import {
   saveSettings,
   saveSubscriptions
 } from "../utils/storage.js";
+import { convertCurrency, formatCurrency } from "../utils/currency.js";
 import { scheduleAllAlarms } from "../utils/notification.js";
 
 const settingsForm = document.querySelector("#settings-form");
@@ -16,6 +17,7 @@ const summaryAmountModeInputs = Array.from(document.querySelectorAll('input[name
 const rateUsdInput = document.querySelector("#rate-usd");
 const rateJpyInput = document.querySelector("#rate-jpy");
 const rateEurInput = document.querySelector("#rate-eur");
+const ratePreviewEl = document.querySelector("#rate-preview");
 const enableNotificationsInput = document.querySelector("#enable-notifications");
 const enableNewTabInput = document.querySelector("#enable-newtab");
 const showExpiredInput = document.querySelector("#show-expired");
@@ -46,10 +48,10 @@ function getImportMode() {
 function validateSettings(settings) {
   const rates = settings.exchangeRates;
   if (!["TWD", "USD", "JPY", "EUR"].includes(settings.defaultCurrency)) {
-    return "請選擇有效的預設幣別。";
+    return "請選擇有效的主畫面顯示幣別。";
   }
   if ([rates.USD, rates.JPY, rates.EUR].some((rate) => !Number.isFinite(rate) || rate <= 0)) {
-    return "匯率必須大於 0。";
+    return "匯率必須全部大於 0。";
   }
   return "";
 }
@@ -71,6 +73,23 @@ function readSettingsFromForm() {
   };
 }
 
+function renderRatePreview() {
+  const settings = readSettingsFromForm();
+  const validationMessage = validateSettings(settings);
+  if (validationMessage) {
+    ratePreviewEl.textContent = "輸入有效匯率後會在這裡預覽換算結果。";
+    return;
+  }
+
+  const target = settings.defaultCurrency;
+  const sampleTwd = convertCurrency(1000, "TWD", target, settings);
+  const sampleUsd = convertCurrency(10, "USD", target, settings);
+  ratePreviewEl.textContent = [
+    `${formatCurrency(1000, "TWD")} = ${formatCurrency(sampleTwd, target)}`,
+    `${formatCurrency(10, "USD")} = ${formatCurrency(sampleUsd, target)}`
+  ].join(" · ");
+}
+
 function fillSettings(settings) {
   currentCategories = normalizeCategories(settings.categories);
   defaultCurrencyInput.value = settings.defaultCurrency;
@@ -84,13 +103,15 @@ function fillSettings(settings) {
   enableNewTabInput.checked = false;
   showExpiredInput.checked = settings.showExpiredInDashboard;
   renderCategoryList();
+  renderRatePreview();
 }
 
 function renderCategoryList() {
   categoryListEl.replaceChildren();
   currentCategories.forEach((category) => {
+    const isProtected = category.value === "其他";
     const item = document.createElement("div");
-    item.className = "category-item";
+    item.className = isProtected ? "category-item protected" : "category-item";
 
     const label = document.createElement("span");
     label.textContent = category.label;
@@ -98,8 +119,9 @@ function renderCategoryList() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "text-danger-button";
-    button.textContent = category.value === "其他" ? "保留" : "刪除";
-    button.disabled = category.value === "其他";
+    button.textContent = isProtected ? "保留" : "刪除";
+    button.disabled = isProtected;
+    button.title = isProtected ? "其他分類會保留作為備用分類" : `刪除 ${category.label}`;
     button.addEventListener("click", () => deleteCategory(category.value));
 
     item.append(label, button);
@@ -111,6 +133,7 @@ async function persistCategories(nextCategories) {
   currentCategories = normalizeCategories(nextCategories);
   await saveSettings({ ...readSettingsFromForm(), categories: currentCategories });
   renderCategoryList();
+  renderRatePreview();
 }
 
 async function addCategory() {
@@ -120,23 +143,23 @@ async function addCategory() {
     return;
   }
   if (currentCategories.some((category) => category.value === name)) {
-    setMessage("此分類已存在。");
+    setMessage("這個分類已經存在。");
     return;
   }
 
   try {
     await persistCategories([...currentCategories, { value: name, label: name }]);
     categoryNameInput.value = "";
-    setMessage("分類已新增。", true);
+    setMessage("已新增分類。", true);
   } catch (error) {
     console.error("Unable to add category", error);
-    setMessage("新增分類失敗。");
+    setMessage("新增分類失敗，請稍後再試。");
   }
 }
 
 async function deleteCategory(categoryValue) {
   if (categoryValue === "其他") return;
-  const confirmed = confirm(`刪除分類「${categoryValue}」？使用此分類的訂閱會移到「其他」。`);
+  const confirmed = confirm(`刪除分類「${categoryValue}」？\n使用這個分類的訂閱會自動移到「其他」。`);
   if (!confirmed) return;
 
   try {
@@ -148,10 +171,10 @@ async function deleteCategory(categoryValue) {
     await saveSubscriptions(nextSubscriptions);
     await persistCategories(nextCategories);
     await scheduleAllAlarms(nextSubscriptions);
-    setMessage("分類已刪除，相關訂閱已移至其他。", true);
+    setMessage("已刪除分類，相關訂閱已移到「其他」。", true);
   } catch (error) {
     console.error("Unable to delete category", error);
-    setMessage("刪除分類失敗。");
+    setMessage("刪除分類失敗，請稍後再試。");
   }
 }
 
@@ -169,10 +192,11 @@ async function handleSettingsSubmit(event) {
   try {
     await saveSettings(settings);
     await scheduleAllAlarms(await getSubscriptions());
+    renderRatePreview();
     setMessage("設定已儲存。", true);
   } catch (error) {
     console.error("Unable to save settings", error);
-    setMessage("儲存設定失敗。");
+    setMessage("儲存設定失敗，請稍後再試。");
   }
 }
 
@@ -194,7 +218,7 @@ async function exportData() {
 async function importData() {
   const file = importFileInput.files?.[0];
   if (!file) {
-    setMessage("請先選擇 JSON 檔案。");
+    setMessage("請先選擇要匯入的 JSON 檔案。");
     return;
   }
 
@@ -203,7 +227,7 @@ async function importData() {
     const parsed = JSON.parse(content);
     const importedSubscriptions = Array.isArray(parsed) ? parsed : parsed.subscriptions;
     if (!Array.isArray(importedSubscriptions)) {
-      setMessage("JSON 內容必須包含 subscriptions 陣列。");
+      setMessage("JSON 格式不正確，找不到 subscriptions 陣列。");
       return;
     }
 
@@ -223,15 +247,15 @@ async function importData() {
     }
 
     await scheduleAllAlarms(nextSubscriptions);
-    setMessage(`已匯入 ${normalized.length} 筆資料。`, true);
+    setMessage(`已匯入 ${normalized.length} 筆訂閱。`, true);
   } catch (error) {
     console.error("Unable to import data", error);
-    setMessage("匯入失敗，請確認 JSON 格式。");
+    setMessage("匯入失敗，請確認 JSON 檔案內容。");
   }
 }
 
 async function clearData() {
-  const confirmed = confirm("確定清除所有 SubTrack 資料？此操作無法復原。");
+  const confirmed = confirm("確定要清除所有 SubTrack 資料？\n這個動作無法復原。");
   if (!confirmed) return;
 
   try {
@@ -242,7 +266,7 @@ async function clearData() {
     setMessage("所有資料已清除。", true);
   } catch (error) {
     console.error("Unable to clear data", error);
-    setMessage("清除資料失敗。");
+    setMessage("清除資料失敗，請稍後再試。");
   }
 }
 
@@ -259,11 +283,15 @@ categoryNameInput.addEventListener("keydown", (event) => {
     addCategory();
   }
 });
+[defaultCurrencyInput, rateUsdInput, rateJpyInput, rateEurInput].forEach((input) => {
+  input.addEventListener("input", renderRatePreview);
+  input.addEventListener("change", renderRatePreview);
+});
 exportButton.addEventListener("click", exportData);
 importButton.addEventListener("click", importData);
 clearButton.addEventListener("click", clearData);
 
 initialize().catch((error) => {
   console.error("Unable to initialize options", error);
-  setMessage("載入設定失敗。");
+  setMessage("載入設定時發生問題，請稍後再試。");
 });

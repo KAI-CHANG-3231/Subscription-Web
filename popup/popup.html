@@ -7,15 +7,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="popup.css">
   </head>
   <body>
     <main class="popup-shell">
-      <header class="summary">
-        <div>
+      <header class="summary surface-panel" aria-label="本月有效總支出">
+        <div class="summary-copy">
           <p class="eyebrow">本月有效總支出</p>
           <h1 id="monthly-total">--</h1>
-          <p id="monthly-change" class="summary-change">只計算訂閱中項目</p>
+          <p id="monthly-change" class="summary-change mono">只計算訂閱中項目</p>
         </div>
         <div class="summary-actions">
           <button id="open-dashboard" class="icon-button" type="button" title="開啟總覽" aria-label="開啟總覽">
@@ -35,20 +36,24 @@
         </div>
       </header>
 
-      <section aria-label="訂閱列表">
-        <div class="section-title">
-          <h2 id="list-title">訂閱中</h2>
-          <span id="subscription-count">0 項</span>
-        </div>
-        <div id="subscription-list" class="subscription-list"></div>
-        <p id="empty-state" class="empty-state" hidden>沒有符合狀態的訂閱。</p>
-      </section>
-
-      <nav class="status-tabs" aria-label="狀態篩選">
+      <nav class="status-tabs surface-panel" aria-label="訂閱狀態篩選">
+        <span id="status-tab-indicator" class="status-tab-indicator" aria-hidden="true"></span>
         <button class="status-tab active" type="button" data-status="active">訂閱中</button>
         <button class="status-tab" type="button" data-status="paused">已暫停</button>
         <button class="status-tab" type="button" data-status="expired">已到期</button>
       </nav>
+
+      <section aria-label="訂閱清單">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">清單</p>
+            <h2 id="list-title">訂閱中</h2>
+          </div>
+          <span id="subscription-count" class="mono">0 項</span>
+        </div>
+        <div id="subscription-list" class="subscription-list"></div>
+        <p id="empty-state" class="empty-state" hidden>目前沒有符合條件的訂閱。</p>
+      </section>
 
       <footer>
         <button id="add-subscription" class="primary-button" type="button">

@@ -4,17 +4,17 @@ SubTrack 是一個 Manifest V3 Chrome Extension，用來手動記錄個人數位
 
 ## 功能
 
-- Popup 快速查看本月有效訂閱總支出
+- Popup 快速查看本月有效訂閱總支出，支援更清楚的卡片操作選單
 - 訂閱狀態：訂閱中、已暫停、已到期
 - 單次訂閱：到期後自動標記為已到期，不再續期
-- Dashboard 總覽頁：分類篩選、狀態篩選、最近 3 筆扣款
+- Dashboard 總覽頁：分類篩選、狀態篩選、最近 3 筆扣款、7 天內扣款與已到期摘要
 - 新增、編輯、暫停、停止、恢復、重新啟用訂閱
 - 自訂分類：可新增或刪除分類，Dashboard 分類 tab 會跟著更新
 - 共同訂閱：可記錄共同成員、分攤人數與個人負擔金額
 - 付款方式：信用卡、金融卡、銀行轉帳、行動支付、現金或其他
 - 支援 TWD、USD、JPY、EUR 與手動匯率，可指定主畫面總支出的主要顯示幣別
 - 匯入、匯出、清除資料
-- Bright fintech 視覺設計：Spend Bar、倒數 chip、滑動式 tab indicator
+- Bright fintech 視覺設計：Spend Bar、倒數 chip、滑動式 tab indicator、精品化表單分段與清楚空狀態
 
 ## 安裝
 
@@ -39,6 +39,7 @@ SubTrack 目前不覆蓋 Chrome 原生新分頁，這是為了保留你平常使
 ├── newtab/
 ├── pages/
 ├── options/
+├── styles/
 ├── utils/
 └── icons/
 ```
@@ -120,6 +121,7 @@ SubTrack 目前不覆蓋 Chrome 原生新分頁，這是為了保留你平常使
 - 通知排程使用 `chrome.alarms`
 - UI 支援 `prefers-reduced-motion: reduce`
 - Dashboard / Popup 使用 inline SVG icon，不使用 emoji icon
+- 共用視覺 token 與基礎互動樣式集中在 `styles/theme.css`
 
 ## 驗證
 
